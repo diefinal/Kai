@@ -1,0 +1,53 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/planner"
+    },
+    {
+      "path": "./packages/execution-engine"
+    },
+    {
+      "path": "./packages/tool-engine"
+    },
+    {
+      "path": "./packages/windows-engine"
+    },
+    {
+      "path": "./packages/browser-engine"
+    },
+    {
+      "path": "./packages/vision-engine"
+    },
+    {
+      "path": "./packages/voice-engine"
+    },
+    {
+      "path": "./packages/memory-engine"
+    },
+    {
+      "path": "./packages/permissions"
+    },
+    {
+      "path": "./packages/coding-engine"
+    },
+    {
+      "path": "./packages/mail-engine"
+    },
+    {
+      "path": "./packages/shared"
+    },
+    {
+      "path": "./packages/plugin-sdk"
+    },
+    {
+      "path": "./apps/desktop"
+    },
+    {
+      "path": "./apps/service"
+    },
+    {
+      "path": "./apps/installer"
+    }
+  ]
+}
