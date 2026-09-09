@@ -1,9 +1,11 @@
 export interface IEventPublisher {
   publish(eventName: string, payload: any): void;
 }
+
 export interface IEventSubscriber {
   subscribe(eventName: string, handler: (payload: any) => void): void;
 }
+
 export interface IEventBus extends IEventPublisher, IEventSubscriber {}
 
 export interface IScreenCaptureProvider {

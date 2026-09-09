@@ -17,6 +17,23 @@ export class VisionContext {
   public rawImage: any;
   public ocrResults: any[] = [];
   public objectResults: any[] = [];
-  
+  // Alias for snapshot.texts for compatibility with legacy detectors
+  get texts(): string[] {
+    return this.snapshot.texts;
+  }
+  set texts(value: string[]) {
+    this.snapshot.texts = value;
+  }
+
   constructor(public id: string) {}
+}
+
+export class VisionMetadata {
+  // Placeholder for future metadata fields
+  constructor(public data: Record<string, any> = {}) {}
+}
+
+export class VisionAnalysis {
+  // Placeholder for analysis results, could include confidence scores etc.
+  constructor(public snapshot: VisionSnapshot, public metadata: VisionMetadata) {}
 }
