@@ -1,28 +1,29 @@
 # Dependencies
 node_modules/
+**/node_modules/
 
-# Build outputs
+# Build
 dist/
 build/
 coverage/
 
 # TypeScript
 *.tsbuildinfo
+**/*.tsbuildinfo
 
-# Environment
+# Turbo
+.turbo/
+
+# Cache
+.cache/
+
+# Logs
+*.log
+
+# Env
 .env
 .env.*
 
 # IDE
 .vscode/
 .idea/
-
-# Logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-
-# OS
-.DS_Store
-Thumbs.db
