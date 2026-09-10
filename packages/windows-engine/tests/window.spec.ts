@@ -49,10 +49,17 @@ const MOCK_WINDOWS: WindowInfo[] = [
 ];
 
 class MockWindowProvider implements IWindowProvider {
-  constructor(private windows: WindowInfo[] = MOCK_WINDOWS) {}
+  constructor(
+    private windows: WindowInfo[] = MOCK_WINDOWS,
+    private activeWindow: WindowInfo | null = MOCK_WINDOWS[0] ?? null
+  ) {}
 
   async enumerate(): Promise<WindowInfo[]> {
     return this.windows;
+  }
+
+  async getActiveWindow(): Promise<WindowInfo | null> {
+    return this.activeWindow;
   }
 }
 
@@ -167,5 +174,34 @@ describe('WindowManager', () => {
     await singleManager.refresh();
 
     expect((await singleManager.getWindows()).length).toBe(1);
+  });
+
+  describe('Active Window Detection', () => {
+    it('Active window exists', async () => {
+      const active = await manager.getActiveWindow();
+      expect(active).toBeDefined();
+      expect(active).not.toBeNull();
+      expect(active!.id).toBe('hwnd-100');
+    });
+
+    it('Active window is foreground', async () => {
+      const active = await manager.getActiveWindow();
+      expect(active).not.toBeNull();
+      expect(active!.isForeground).toBe(true);
+    });
+
+    it('Active window is included in window list', async () => {
+      const active = await manager.getActiveWindow();
+      const windows = await manager.getWindows();
+      expect(active).not.toBeNull();
+      const match = windows.find((w) => w.id === active!.id);
+      expect(match).toBeDefined();
+    });
+
+    it('Returns null if no active window', async () => {
+      const mgr = new WindowManager(new MockWindowProvider(MOCK_WINDOWS, null));
+      const active = await mgr.getActiveWindow();
+      expect(active).toBeNull();
+    });
   });
 });
