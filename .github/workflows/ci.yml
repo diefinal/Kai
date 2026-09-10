@@ -2,25 +2,50 @@ name: CI
 
 on:
   push:
+    branches:
+      - develop
+      - "feature/**"
+      - "docs/**"
+
   pull_request:
+    branches:
+      - develop
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-  - uses: pnpm/action-setup@v4
-  with:
-    version: 12.3.4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-- uses: actions/setup-node@v4
-  with:
-    node-version: 20
-    cache: pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.3.4
 
-      - run: pnpm install --frozen-lockfile
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
 
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm build
+      - name: Verify versions
+        run: |
+          node -v
+          pnpm -v
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

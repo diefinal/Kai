@@ -15,6 +15,7 @@ export class ExecutionContext {
 export class ExecutionManager {
   private contexts = new Map<string, ExecutionContext>();
   private dispatcher: EventDispatcher;
+  private permissionResolvers = new Map<string, (granted: boolean) => void>();
 
   constructor(
     private eventBus: IEventBus,
@@ -72,14 +73,20 @@ export class ExecutionManager {
     
     if (ctx.status !== ExecutionStatus.WAITING_PERMISSION) return;
 
+    const resolver = this.permissionResolvers.get(executionId);
+    if (!resolver) return;
+
+    this.permissionResolvers.delete(executionId);
+
     if (granted) {
       this.dispatcher.dispatch(EventTypes.PermissionGranted, { id: executionId });
       await this.changeState(ctx, ExecutionStatus.EXECUTING);
-      this.process(executionId);
+      resolver(true);
     } else {
       this.dispatcher.dispatch(EventTypes.PermissionDenied, { id: executionId });
       await this.changeState(ctx, ExecutionStatus.FAILED);
       this.dispatcher.dispatch(EventTypes.ExecutionFailed, { id: executionId, reason: 'Permission denied' });
+      resolver(false);
     }
   }
 
@@ -96,17 +103,22 @@ export class ExecutionManager {
     while (ctx.currentStepIndex < ctx.plan.steps.length) {
       const step = ctx.plan.steps[ctx.currentStepIndex];
       
-      if (step.requiresPermission && ctx.status !== ExecutionStatus.WAITING_PERMISSION && ctx.status !== ExecutionStatus.EXECUTING) {
-         // Need permission
-         await this.changeState(ctx, ExecutionStatus.WAITING_PERMISSION);
-         this.dispatcher.dispatch(EventTypes.PermissionRequested, { id: executionId, stepId: step.id });
-         return; // Wait for permission
-      }
-      
-      // If we resumed from waiting permission, we are now EXECUTING.
-      // Make sure we are in EXECUTING state.
-      if (ctx.status === ExecutionStatus.WAITING_PERMISSION) {
-          return; // Still waiting
+      if (step.requiresPermission) {
+         if (ctx.status !== ExecutionStatus.WAITING_PERMISSION) {
+           // Fresh permission request — transition and emit event
+           await this.changeState(ctx, ExecutionStatus.WAITING_PERMISSION);
+           this.dispatcher.dispatch(EventTypes.PermissionRequested, { id: executionId, stepId: step.id });
+         }
+
+         // Wait for external grant/deny (covers both fresh request and recovery)
+         const granted = await new Promise<boolean>((resolve) => {
+           this.permissionResolvers.set(executionId, resolve);
+         });
+
+         if (!granted) {
+           return; // Permission denied — failure events already emitted
+         }
+         // Permission granted — status already set to EXECUTING by providePermission
       }
 
       this.dispatcher.dispatch(EventTypes.StepStarted, { id: executionId, stepId: step.id });
@@ -116,7 +128,8 @@ export class ExecutionManager {
         if (result.success) {
           ctx.currentStepIndex++;
           this.dispatcher.dispatch(EventTypes.StepCompleted, { id: executionId, stepId: step.id, result: result.output });
-          await this.checkpointStore.save(ctx.plan.id, ctx); // checkpoint
+          await this.checkpointStore.save(ctx.plan.id, ctx);
+          this.dispatcher.dispatch(EventTypes.Checkpoint, { id: ctx.plan.id, state: ctx.status });
         } else {
           // Handle retry
           const retries = ctx.stepRetries[step.id] || 0;

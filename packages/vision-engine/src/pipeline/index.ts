@@ -34,13 +34,15 @@ export class VisionPipeline {
     // ---------- Capture ----------
     const rawImage = await this.captureProvider.capture();
     const hash = this.captureProvider.generateHash(rawImage);
-    this.eventBus.publish(VisionEventTypes.ScreenCaptured, { hash });
 
     // ---------- Cache ----------
     const cached = this.cache.get(hash);
     if (cached) {
       return cached;
     }
+
+    // ---------- Screen Captured (only on cache miss) ----------
+    this.eventBus.publish(VisionEventTypes.ScreenCaptured, { hash });
 
     // ---------- Context creation ----------
     const context = new VisionContext(hash);
