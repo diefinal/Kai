@@ -43,6 +43,13 @@ export class WindowManager {
   }
 
   /**
+   * Returns the currently active window from the provider, or null if none.
+   */
+  async getActiveWindow(): Promise<WindowInfo | null> {
+    return this.provider.getActiveWindow();
+  }
+
+  /**
    * Returns the window matching the given id, or undefined.
    */
   async findWindowById(id: string): Promise<Window | undefined> {

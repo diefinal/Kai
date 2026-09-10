@@ -8,4 +8,6 @@ import { WindowInfo } from '../window/Window';
 export interface IWindowProvider {
   /** Return all top-level windows currently known to the OS. */
   enumerate(): Promise<WindowInfo[]>;
+  /** Return the currently active (foreground) window, or null if none. */
+  getActiveWindow(): Promise<WindowInfo | null>;
 }
