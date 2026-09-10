@@ -19,7 +19,7 @@ export class ExecutionStateMachine {
     [ExecutionStatus.QUEUED]: [ExecutionStatus.PLANNING, ExecutionStatus.CANCELLED],
     [ExecutionStatus.PLANNING]: [ExecutionStatus.WAITING_PERMISSION, ExecutionStatus.EXECUTING, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED],
     [ExecutionStatus.WAITING_PERMISSION]: [ExecutionStatus.EXECUTING, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED],
-    [ExecutionStatus.EXECUTING]: [ExecutionStatus.PAUSED, ExecutionStatus.RETRYING, ExecutionStatus.COMPLETED, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED],
+    [ExecutionStatus.EXECUTING]: [ExecutionStatus.PAUSED, ExecutionStatus.WAITING_PERMISSION, ExecutionStatus.RETRYING, ExecutionStatus.COMPLETED, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED],
     [ExecutionStatus.PAUSED]: [ExecutionStatus.EXECUTING, ExecutionStatus.CANCELLED],
     [ExecutionStatus.RETRYING]: [ExecutionStatus.EXECUTING, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED],
     [ExecutionStatus.COMPLETED]: [],
