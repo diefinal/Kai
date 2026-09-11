@@ -11,3 +11,6 @@ export class SnapshotCache implements ISnapshotCache {
     this.store.set(hash, snapshot);
   }
 }
+
+export * from './CacheEntry';
+export * from './ImageCache';
