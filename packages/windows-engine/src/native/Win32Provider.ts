@@ -1,6 +1,8 @@
 import { spawn } from 'child_process';
 import { NativeProvider, MousePosition, ScreenCapture } from './NativeProvider';
 import { WindowInfo } from '../window/Window';
+import { Key } from '../input/Key';
+import { InputProvider } from '../input/InputProvider';
 
 /**
  * C# source code using P/Invoke to declare Windows User32 APIs:
@@ -14,6 +16,8 @@ import { WindowInfo } from '../window/Window';
  * - GetCursorPos
  * - SetCursorPos
  * - SendInput
+ * - VkKeyScanW
+ * - MapVirtualKeyW
  */
 const WIN32_HELPER_CS = `
 using System;
@@ -83,12 +87,25 @@ public class Win32NativeApi {
     [DllImport("user32.dll")]
     public static extern bool SetCursorPos(int X, int Y);
 
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern short VkKeyScanW(char ch);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern uint MapVirtualKeyW(uint uCode, uint uMapType);
+
     // SendInput structures & constants
     public const int INPUT_MOUSE = 0;
+    public const int INPUT_KEYBOARD = 1;
+
     public const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
     public const uint MOUSEEVENTF_LEFTUP = 0x0004;
     public const uint MOUSEEVENTF_RIGHTDOWN = 0x0008;
     public const uint MOUSEEVENTF_RIGHTUP = 0x0010;
+
+    public const uint KEYEVENTF_EXTENDEDKEY = 0x0001;
+    public const uint KEYEVENTF_KEYUP = 0x0002;
+    public const uint KEYEVENTF_UNICODE = 0x0004;
+    public const uint KEYEVENTF_SCANCODE = 0x0008;
 
     [StructLayout(LayoutKind.Sequential)]
     public struct MOUSEINPUT {
@@ -100,12 +117,23 @@ public class Win32NativeApi {
         public IntPtr dwExtraInfo;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct KEYBDINPUT {
+        public ushort wVk;
+        public ushort wScan;
+        public uint dwFlags;
+        public uint time;
+        public IntPtr dwExtraInfo;
+    }
+
     [StructLayout(LayoutKind.Explicit)]
     public struct INPUT {
         [FieldOffset(0)]
         public int type;
         [FieldOffset(8)]
         public MOUSEINPUT mi;
+        [FieldOffset(8)]
+        public KEYBDINPUT ki;
     }
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -252,6 +280,64 @@ public class Win32NativeApi {
         System.Threading.Thread.Sleep(50);
         SendLeftClick();
     }
+
+    public static void SendKey(ushort vk, bool isUp, bool isExtended = false) {
+        uint flags = 0;
+        if (isUp) flags |= KEYEVENTF_KEYUP;
+        if (isExtended) flags |= KEYEVENTF_EXTENDEDKEY;
+
+        ushort scan = (ushort)MapVirtualKeyW(vk, 0);
+
+        INPUT[] inputs = new INPUT[1];
+        inputs[0] = new INPUT {
+            type = INPUT_KEYBOARD,
+            ki = new KEYBDINPUT {
+                wVk = vk,
+                wScan = scan,
+                dwFlags = flags,
+                time = 0,
+                dwExtraInfo = IntPtr.Zero
+            }
+        };
+        SendInput(1, inputs, Marshal.SizeOf(typeof(INPUT)));
+    }
+
+    public static void TapKey(ushort vk, bool isExtended = false) {
+        SendKey(vk, false, isExtended);
+        SendKey(vk, true, isExtended);
+    }
+
+    public static void SendUnicodeChar(char ch) {
+        INPUT[] inputs = new INPUT[2];
+        inputs[0] = new INPUT {
+            type = INPUT_KEYBOARD,
+            ki = new KEYBDINPUT {
+                wVk = 0,
+                wScan = (ushort)ch,
+                dwFlags = KEYEVENTF_UNICODE,
+                time = 0,
+                dwExtraInfo = IntPtr.Zero
+            }
+        };
+        inputs[1] = new INPUT {
+            type = INPUT_KEYBOARD,
+            ki = new KEYBDINPUT {
+                wVk = 0,
+                wScan = (ushort)ch,
+                dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP,
+                time = 0,
+                dwExtraInfo = IntPtr.Zero
+            }
+        };
+        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
+    }
+
+    public static void TypeText(string text) {
+        if (string.IsNullOrEmpty(text)) return;
+        foreach (char c in text) {
+            SendUnicodeChar(c);
+        }
+    }
 }
 `;
 
@@ -273,7 +359,73 @@ interface RawWin32Point {
   y: number;
 }
 
-export class Win32Provider implements NativeProvider {
+/**
+ * Maps Key enum to Virtual Key code and whether it is an extended key.
+ */
+function getVirtualKeyCode(key: Key): { vk: number; extended: boolean } {
+  switch (key) {
+    case Key.Enter:
+      return { vk: 0x0D, extended: false };
+    case Key.Escape:
+      return { vk: 0x1B, extended: false };
+    case Key.Tab:
+      return { vk: 0x09, extended: false };
+    case Key.Space:
+      return { vk: 0x20, extended: false };
+    case Key.Backspace:
+      return { vk: 0x08, extended: false };
+    case Key.Delete:
+      return { vk: 0x2E, extended: true };
+    case Key.ArrowUp:
+      return { vk: 0x26, extended: true };
+    case Key.ArrowDown:
+      return { vk: 0x28, extended: true };
+    case Key.ArrowLeft:
+      return { vk: 0x25, extended: true };
+    case Key.ArrowRight:
+      return { vk: 0x27, extended: true };
+    case Key.Control:
+      return { vk: 0x11, extended: false };
+    case Key.Shift:
+      return { vk: 0x10, extended: false };
+    case Key.Alt:
+      return { vk: 0x12, extended: false };
+    case Key.Meta:
+    case Key.Win:
+      return { vk: 0x5B, extended: true };
+
+    // Digits 0-9
+    case Key.Digit0:
+      return { vk: 0x30, extended: false };
+    case Key.Digit1:
+      return { vk: 0x31, extended: false };
+    case Key.Digit2:
+      return { vk: 0x32, extended: false };
+    case Key.Digit3:
+      return { vk: 0x33, extended: false };
+    case Key.Digit4:
+      return { vk: 0x34, extended: false };
+    case Key.Digit5:
+      return { vk: 0x35, extended: false };
+    case Key.Digit6:
+      return { vk: 0x36, extended: false };
+    case Key.Digit7:
+      return { vk: 0x37, extended: false };
+    case Key.Digit8:
+      return { vk: 0x38, extended: false };
+    case Key.Digit9:
+      return { vk: 0x39, extended: false };
+
+    // Letters A-Z
+    default:
+      if (typeof key === 'string' && key.length === 1 && key >= 'A' && key <= 'Z') {
+        return { vk: key.charCodeAt(0), extended: false };
+      }
+      return { vk: 0, extended: false };
+  }
+}
+
+export class Win32Provider implements NativeProvider, InputProvider {
   /**
    * Helper to execute PowerShell scripts on Windows to call native Win32 APIs.
    */
@@ -499,6 +651,63 @@ Add-Type -TypeDefinition @"
 ${WIN32_HELPER_CS}
 "@
 [Win32NativeApi]::SendDoubleClick()
+`;
+    await this.executePowerShell(psScript);
+  }
+
+  /**
+   * Simulates pressing down a keyboard key using Win32 SendInput API.
+   */
+  async pressKey(key: Key): Promise<void> {
+    const { vk, extended } = getVirtualKeyCode(key);
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+[Win32NativeApi]::SendKey(${vk}, $false, ${extended ? '$true' : '$false'})
+`;
+    await this.executePowerShell(psScript);
+  }
+
+  /**
+   * Simulates releasing a keyboard key using Win32 SendInput API.
+   */
+  async releaseKey(key: Key): Promise<void> {
+    const { vk, extended } = getVirtualKeyCode(key);
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+[Win32NativeApi]::SendKey(${vk}, $true, ${extended ? '$true' : '$false'})
+`;
+    await this.executePowerShell(psScript);
+  }
+
+  /**
+   * Simulates pressing and immediately releasing a keyboard key.
+   */
+  async tapKey(key: Key): Promise<void> {
+    const { vk, extended } = getVirtualKeyCode(key);
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+[Win32NativeApi]::TapKey(${vk}, ${extended ? '$true' : '$false'})
+`;
+    await this.executePowerShell(psScript);
+  }
+
+  /**
+   * Simulates typing a string of text using Win32 Unicode SendInput.
+   */
+  async typeText(text: string): Promise<void> {
+    const encoded = JSON.stringify(text);
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+$text = ${encoded}
+[Win32NativeApi]::TypeText($text)
 `;
     await this.executePowerShell(psScript);
   }

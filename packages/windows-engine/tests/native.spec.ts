@@ -9,6 +9,9 @@ import {
   MouseController,
   IMouseProvider,
   MousePosition,
+  KeyboardController,
+  InputProvider,
+  Key,
 } from '../src';
 
 class TestableWin32Provider extends Win32Provider {
@@ -305,6 +308,114 @@ describe('Win32Provider Native Mouse API', () => {
       'rightClick',
       'doubleClick',
       'click:middle',
+    ]);
+  });
+});
+
+describe('Win32Provider Native Keyboard API', () => {
+  it('pressKey', async () => {
+    const provider = new TestableWin32Provider();
+    await provider.pressKey(Key.A);
+
+    const called = provider.executedScripts.some((s) =>
+      s.includes('[Win32NativeApi]::SendKey(65, $false, $false)')
+    );
+    expect(called).toBe(true);
+  });
+
+  it('releaseKey', async () => {
+    const provider = new TestableWin32Provider();
+    await provider.releaseKey(Key.A);
+
+    const called = provider.executedScripts.some((s) =>
+      s.includes('[Win32NativeApi]::SendKey(65, $true, $false)')
+    );
+    expect(called).toBe(true);
+  });
+
+  it('tapKey', async () => {
+    const provider = new TestableWin32Provider();
+    await provider.tapKey(Key.Enter);
+
+    const called = provider.executedScripts.some((s) =>
+      s.includes('[Win32NativeApi]::TapKey(13, $false)')
+    );
+    expect(called).toBe(true);
+  });
+
+  it('typeText', async () => {
+    const provider = new TestableWin32Provider();
+    await provider.typeText('Hello Kai');
+
+    const called = provider.executedScripts.some(
+      (s) =>
+        s.includes('$text = "Hello Kai"') &&
+        s.includes('[Win32NativeApi]::TypeText($text)')
+    );
+    expect(called).toBe(true);
+  });
+
+  it('modifier keys', async () => {
+    const provider = new TestableWin32Provider();
+
+    await provider.pressKey(Key.Control);
+    await provider.pressKey(Key.Shift);
+    await provider.pressKey(Key.Alt);
+    await provider.pressKey(Key.Win);
+
+    expect(
+      provider.executedScripts.some((s) =>
+        s.includes('[Win32NativeApi]::SendKey(17, $false, $false)')
+      )
+    ).toBe(true); // VK_CONTROL (0x11 = 17)
+    expect(
+      provider.executedScripts.some((s) =>
+        s.includes('[Win32NativeApi]::SendKey(16, $false, $false)')
+      )
+    ).toBe(true); // VK_SHIFT (0x10 = 16)
+    expect(
+      provider.executedScripts.some((s) =>
+        s.includes('[Win32NativeApi]::SendKey(18, $false, $false)')
+      )
+    ).toBe(true); // VK_MENU/ALT (0x12 = 18)
+    expect(
+      provider.executedScripts.some((s) =>
+        s.includes('[Win32NativeApi]::SendKey(91, $false, $true)')
+      )
+    ).toBe(true); // VK_LWIN (0x5B = 91, extended = true)
+  });
+
+  it('mock provider compatibility', async () => {
+    class MockInputProv implements InputProvider {
+      public events: string[] = [];
+
+      async pressKey(key: Key): Promise<void> {
+        this.events.push(`press:${key}`);
+      }
+      async releaseKey(key: Key): Promise<void> {
+        this.events.push(`release:${key}`);
+      }
+      async tapKey(key: Key): Promise<void> {
+        this.events.push(`tap:${key}`);
+      }
+      async typeText(text: string): Promise<void> {
+        this.events.push(`type:${text}`);
+      }
+    }
+
+    const mockProv = new MockInputProv();
+    const controller = new KeyboardController(mockProv);
+
+    await controller.pressKey(Key.Control);
+    await controller.tapKey(Key.C);
+    await controller.releaseKey(Key.Control);
+    await controller.typeText('Paste text');
+
+    expect(mockProv.events).toEqual([
+      'press:Control',
+      'tap:C',
+      'release:Control',
+      'type:Paste text',
     ]);
   });
 });
