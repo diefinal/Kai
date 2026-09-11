@@ -103,9 +103,77 @@ export class DefaultNativeWindowMock implements INativeWindow {
   }
 }
 
+export class ElectronWindowAdapter implements INativeWindow {
+  constructor(private readonly window: any) {}
+
+  get id(): number {
+    return this.window.id;
+  }
+
+  isDestroyed(): boolean {
+    return this.window.isDestroyed();
+  }
+
+  isVisible(): boolean {
+    return this.window.isVisible();
+  }
+
+  isMaximized(): boolean {
+    return this.window.isMaximized();
+  }
+
+  getBounds(): { x: number; y: number; width: number; height: number } {
+    return this.window.getBounds();
+  }
+
+  async loadURL(url: string): Promise<void> {
+    return this.window.loadURL(url);
+  }
+
+  async loadFile(filePath: string): Promise<void> {
+    return this.window.loadFile(filePath);
+  }
+
+  show(): void {
+    this.window.show();
+  }
+
+  close(): void {
+    this.window.close();
+  }
+
+  on(event: string, listener: (...args: any[]) => void): void {
+    this.window.on(event, listener);
+  }
+}
+
 export class MockWindowFactory implements WindowFactory {
   createWindow(options: NativeWindowOptions): INativeWindow {
     return new DefaultNativeWindowMock(options);
+  }
+}
+
+export class ElectronWindowFactory implements WindowFactory {
+  constructor(private readonly browserWindowClass: any) {}
+
+  createWindow(options: NativeWindowOptions): INativeWindow {
+    const win = new this.browserWindowClass({
+      width: options.width,
+      height: options.height,
+      minWidth: options.minWidth,
+      minHeight: options.minHeight,
+      x: options.x,
+      y: options.y,
+      frame: options.frame,
+      title: options.title,
+      webPreferences: {
+        preload: options.webPreferences.preload,
+        nodeIntegration: options.webPreferences.nodeIntegration,
+        contextIsolation: options.webPreferences.contextIsolation,
+        sandbox: options.webPreferences.sandbox,
+      },
+    });
+    return new ElectronWindowAdapter(win);
   }
 }
 

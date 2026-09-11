@@ -7,6 +7,26 @@ export interface IpcBridgeServer {
   removeAllListeners(channel: string): void;
 }
 
+export class ElectronIpcBridgeServer implements IpcBridgeServer {
+  constructor(private readonly ipcMainInstance: any) {}
+
+  handle(channel: string, listener: IpcListener): void {
+    this.ipcMainInstance.handle(channel, listener);
+  }
+
+  on(channel: string, listener: IpcListener): void {
+    this.ipcMainInstance.on(channel, listener);
+  }
+
+  removeHandler(channel: string): void {
+    this.ipcMainInstance.removeHandler(channel);
+  }
+
+  removeAllListeners(channel: string): void {
+    this.ipcMainInstance.removeAllListeners(channel);
+  }
+}
+
 export class InMemoryIpcBridgeServer implements IpcBridgeServer {
   private handlers = new Map<string, IpcListener>();
   private listeners = new Map<string, IpcListener[]>();
