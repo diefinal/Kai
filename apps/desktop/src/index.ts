@@ -1,1 +1,2 @@
-console.log('App: @kai/desktop');
+export * from './demo';
+export * from './pipeline';
