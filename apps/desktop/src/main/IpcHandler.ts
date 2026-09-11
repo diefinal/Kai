@@ -70,8 +70,13 @@ export class InMemoryIpcBridgeServer implements IpcBridgeServer {
   }
 }
 
+import { CommandDispatcher } from '../core/CommandDispatcher';
+
 export class IpcHandler {
-  constructor(private readonly ipcServer: IpcBridgeServer = new InMemoryIpcBridgeServer()) {}
+  constructor(
+    private readonly ipcServer: IpcBridgeServer = new InMemoryIpcBridgeServer(),
+    private readonly commandDispatcher: CommandDispatcher = new CommandDispatcher()
+  ) {}
 
   registerHandlers(): void {
     this.ipcServer.handle('kai:app:version', async () => {
@@ -80,6 +85,10 @@ export class IpcHandler {
 
     this.ipcServer.handle('kai:app:ping', async () => {
       return 'pong';
+    });
+
+    this.ipcServer.handle('kai:command:execute', async (_event, command: string) => {
+      return this.commandDispatcher.dispatch(command);
     });
 
     this.ipcServer.handle('kai:window:minimize', async () => {

@@ -46,11 +46,28 @@ export const App: React.FC = () => {
     setStatus('Thinking...');
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      let responseText = 'Command received.';
+      if (typeof window !== 'undefined' && window.kai && window.kai.executeCommand) {
+        responseText = await window.kai.executeCommand(trimmed);
+      } else {
+        const { CommandDispatcher } = await import('../core/CommandDispatcher');
+        const dispatcher = new CommandDispatcher();
+        responseText = await dispatcher.dispatch(trimmed);
+      }
+
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === thinkingId
-            ? { ...msg, content: 'Command received.', createdAt: Date.now() }
+            ? { ...msg, content: responseText, createdAt: Date.now() }
+            : msg
+        )
+      );
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === thinkingId
+            ? { ...msg, content: `Error: ${errorMsg}`, createdAt: Date.now() }
             : msg
         )
       );

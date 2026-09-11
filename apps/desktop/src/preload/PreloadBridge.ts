@@ -1,6 +1,7 @@
 export interface KaiDesktopApi {
   version: () => Promise<{ version: string; name: string }>;
   ping: () => Promise<string>;
+  executeCommand: (command: string) => Promise<string>;
   window: {
     minimize: () => Promise<{ action: string }>;
     maximize: () => Promise<{ action: string }>;
@@ -30,6 +31,9 @@ export class MockIpcRendererClient implements IpcRendererClient {
     }
     if (channel === 'kai:app:ping') {
       return 'pong';
+    }
+    if (channel === 'kai:command:execute') {
+      return 'Command executed';
     }
     if (channel.startsWith('kai:window:')) {
       const action = channel.replace('kai:window:', '');
@@ -64,6 +68,7 @@ export class PreloadBridge {
     return {
       version: () => this.ipcRenderer.invoke('kai:app:version'),
       ping: () => this.ipcRenderer.invoke('kai:app:ping'),
+      executeCommand: (command: string) => this.ipcRenderer.invoke('kai:command:execute', command),
       window: {
         minimize: () => this.ipcRenderer.invoke('kai:window:minimize'),
         maximize: () => this.ipcRenderer.invoke('kai:window:maximize'),
