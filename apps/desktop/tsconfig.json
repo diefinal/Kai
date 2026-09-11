@@ -5,7 +5,8 @@
     "outDir": "dist",
     "rootDir": "src",
     "module": "CommonJS",
-    "target": "ES2022"
+    "target": "ES2022",
+    "jsx": "react-jsx"
   },
   "include": [
     "src"

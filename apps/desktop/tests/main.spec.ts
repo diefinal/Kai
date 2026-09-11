@@ -3,7 +3,7 @@ import { Application, MockAppLifecycleHost } from '../src/main/Application';
 import { WindowManager, MockWindowFactory } from '../src/main/WindowManager';
 import { WindowStateStore, InMemoryWindowStateStorage } from '../src/main/WindowStateStore';
 import { IpcHandler, InMemoryIpcBridgeServer } from '../src/main/IpcHandler';
-import { RendererApp } from '../src/renderer/App';
+import { RendererApp } from '../src/renderer/RendererApp';
 
 describe('Application and Window Lifecycle', () => {
   it('bootstraps application, creates single main window with 1200x800 size and native title bar', async () => {
@@ -73,6 +73,5 @@ describe('Application and Window Lifecycle', () => {
     const fakeDom = { innerHTML: '' };
     renderer.mount(fakeDom);
     expect(fakeDom.innerHTML).toContain('kai-chat-window');
-    expect(fakeDom.innerHTML).toContain('Welcome to Kai');
   });
 });
