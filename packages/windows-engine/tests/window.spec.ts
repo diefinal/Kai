@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Window, WindowManager, WindowInfo, IWindowProvider } from '../src';
 
 const MOCK_WINDOWS: WindowInfo[] = [
@@ -202,6 +202,32 @@ describe('WindowManager', () => {
       const mgr = new WindowManager(new MockWindowProvider(MOCK_WINDOWS, null));
       const active = await mgr.getActiveWindow();
       expect(active).toBeNull();
+    });
+  });
+
+  describe('Window Control Methods', () => {
+    class ControllableWindowProvider extends MockWindowProvider {
+      activateWindow = vi.fn().mockResolvedValue(true);
+      minimizeWindow = vi.fn().mockResolvedValue(true);
+      maximizeWindow = vi.fn().mockResolvedValue(true);
+      closeWindow = vi.fn().mockResolvedValue(true);
+    }
+
+    it('delegates activateWindow, minimizeWindow, maximizeWindow, closeWindow', async () => {
+      const provider = new ControllableWindowProvider();
+      const mgr = new WindowManager(provider);
+
+      expect(await mgr.activateWindow('hwnd-100')).toBe(true);
+      expect(provider.activateWindow).toHaveBeenCalledWith('hwnd-100');
+
+      expect(await mgr.minimizeWindow('hwnd-100')).toBe(true);
+      expect(provider.minimizeWindow).toHaveBeenCalledWith('hwnd-100');
+
+      expect(await mgr.maximizeWindow('hwnd-100')).toBe(true);
+      expect(provider.maximizeWindow).toHaveBeenCalledWith('hwnd-100');
+
+      expect(await mgr.closeWindow('hwnd-100')).toBe(true);
+      expect(provider.closeWindow).toHaveBeenCalledWith('hwnd-100');
     });
   });
 });

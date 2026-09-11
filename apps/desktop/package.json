@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@kai/planner": "workspace:*",
-    "@kai/shared": "workspace:*"
+    "@kai/shared": "workspace:*",
+    "@kai/windows-engine": "workspace:*",
+    "@kai/vision-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",

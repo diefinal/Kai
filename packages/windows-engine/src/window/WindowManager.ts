@@ -74,6 +74,50 @@ export class WindowManager {
   }
 
   /**
+   * Activates / brings the specified window (by id or Window instance) to foreground.
+   */
+  async activateWindow(target: string | Window): Promise<boolean> {
+    const id = typeof target === 'string' ? target : target.id;
+    if (this.provider.activateWindow) {
+      return this.provider.activateWindow(id);
+    }
+    return false;
+  }
+
+  /**
+   * Minimizes the window.
+   */
+  async minimizeWindow(target?: string | Window): Promise<boolean> {
+    const id = target ? (typeof target === 'string' ? target : target.id) : undefined;
+    if (this.provider.minimizeWindow) {
+      return this.provider.minimizeWindow(id);
+    }
+    return false;
+  }
+
+  /**
+   * Maximizes the window.
+   */
+  async maximizeWindow(target?: string | Window): Promise<boolean> {
+    const id = target ? (typeof target === 'string' ? target : target.id) : undefined;
+    if (this.provider.maximizeWindow) {
+      return this.provider.maximizeWindow(id);
+    }
+    return false;
+  }
+
+  /**
+   * Closes the window.
+   */
+  async closeWindow(target?: string | Window): Promise<boolean> {
+    const id = target ? (typeof target === 'string' ? target : target.id) : undefined;
+    if (this.provider.closeWindow) {
+      return this.provider.closeWindow(id);
+    }
+    return false;
+  }
+
+  /**
    * Returns true if refresh() has been called at least once.
    */
   isInitialized(): boolean {

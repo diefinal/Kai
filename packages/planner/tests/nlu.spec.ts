@@ -135,4 +135,112 @@ describe('AI-001 Natural Language Understanding (NLU)', () => {
       expect(plan.tasks[0].title).toBe('Get Windows');
     });
   });
+
+  describe('AI-002 Desktop Action Intents', () => {
+    describe('OPEN_APPLICATION', () => {
+      it('recognizes open chrome in English and Turkish', () => {
+        const resEn = recognizer.recognize('Open Chrome');
+        expect(resEn.name).toBe('OPEN_APPLICATION');
+        expect(resEn.parameters?.target).toBe('chrome');
+
+        const resTr = recognizer.recognize("Chrome'u aç");
+        expect(resTr.name).toBe('OPEN_APPLICATION');
+        expect(resTr.parameters?.target).toBe('chrome');
+      });
+
+      it('recognizes VS Code, Edge, Notepad, File Explorer', () => {
+        expect(recognizer.recognize('Visual Studio Code aç').parameters?.target).toBe('vscode');
+        expect(recognizer.recognize('Open Edge').parameters?.target).toBe('edge');
+        expect(recognizer.recognize('Notepad aç').parameters?.target).toBe('notepad');
+        expect(recognizer.recognize('Dosya Gezgini aç').parameters?.target).toBe('explorer');
+      });
+
+      it('asks follow-up if application target is missing', () => {
+        const res = recognizer.recognize('Uygulama aç');
+        expect(res.name).toBe('OPEN_APPLICATION');
+        expect(res.parameters?.followUpQuestion).toBe('Hangi uygulamayı açmamı istersin?');
+      });
+    });
+
+    describe('Window Control Intents', () => {
+      it('recognizes BRING_TO_FRONT', () => {
+        const res1 = recognizer.recognize('Bring Chrome to front');
+        expect(res1.name).toBe('BRING_TO_FRONT');
+        expect(res1.parameters?.target).toBe('chrome');
+
+        const res2 = recognizer.recognize("VS Code'a geç");
+        expect(res2.name).toBe('BRING_TO_FRONT');
+        expect(res2.parameters?.target).toBe('vscode');
+      });
+
+      it('recognizes MINIMIZE_WINDOW', () => {
+        expect(recognizer.recognize('Minimize current window').name).toBe('MINIMIZE_WINDOW');
+        expect(recognizer.recognize('Pencereyi küçült').name).toBe('MINIMIZE_WINDOW');
+      });
+
+      it('recognizes MAXIMIZE_WINDOW', () => {
+        expect(recognizer.recognize('Maximize current window').name).toBe('MAXIMIZE_WINDOW');
+        expect(recognizer.recognize('Pencereyi büyüt').name).toBe('MAXIMIZE_WINDOW');
+      });
+
+      it('recognizes CLOSE_WINDOW', () => {
+        expect(recognizer.recognize('Close current window').name).toBe('CLOSE_WINDOW');
+        expect(recognizer.recognize('Pencereyi kapat').name).toBe('CLOSE_WINDOW');
+      });
+    });
+
+    describe('Mouse Intents', () => {
+      it('recognizes MOVE_MOUSE with coordinates', () => {
+        const res1 = recognizer.recognize('Move mouse to 500, 300');
+        expect(res1.name).toBe('MOVE_MOUSE');
+        expect(res1.parameters?.x).toBe(500);
+        expect(res1.parameters?.y).toBe(300);
+
+        const res2 = recognizer.recognize('Fareyi 100 200 konumuna taşı');
+        expect(res2.name).toBe('MOVE_MOUSE');
+        expect(res2.parameters?.x).toBe(100);
+        expect(res2.parameters?.y).toBe(200);
+      });
+
+      it('recognizes MOUSE_CLICK types', () => {
+        const left = recognizer.recognize('Left click');
+        expect(left.name).toBe('MOUSE_CLICK');
+        expect(left.parameters?.button).toBe('left');
+        expect(left.parameters?.type).toBe('single');
+
+        const right = recognizer.recognize('Sağ tıkla');
+        expect(right.name).toBe('MOUSE_CLICK');
+        expect(right.parameters?.button).toBe('right');
+
+        const dbl = recognizer.recognize('Çift tıkla');
+        expect(dbl.name).toBe('MOUSE_CLICK');
+        expect(dbl.parameters?.type).toBe('double');
+      });
+    });
+
+    describe('Keyboard Intents', () => {
+      it('recognizes TYPE_TEXT with parameters', () => {
+        const res1 = recognizer.recognize('Type "Hello World"');
+        expect(res1.name).toBe('TYPE_TEXT');
+        expect(res1.parameters?.text).toBe('Hello World');
+
+        const res2 = recognizer.recognize('Metin yaz "Kai AI"');
+        expect(res2.name).toBe('TYPE_TEXT');
+        expect(res2.parameters?.text).toBe('Kai AI');
+      });
+
+      it('recognizes PRESS_KEY for Enter, Tab, Escape', () => {
+        expect(recognizer.recognize('Press Enter').parameters?.key).toBe('Enter');
+        expect(recognizer.recognize("Tab'a bas").parameters?.key).toBe('Tab');
+        expect(recognizer.recognize('Esc tuşuna bas').parameters?.key).toBe('Escape');
+      });
+
+      it('recognizes KEY_SHORTCUT for Ctrl+C, Ctrl+V, Ctrl+A', () => {
+        expect(recognizer.recognize('Ctrl+C').parameters?.shortcut).toBe('Ctrl+C');
+        expect(recognizer.recognize('Kopyala').parameters?.shortcut).toBe('Ctrl+C');
+        expect(recognizer.recognize('Yapıştır').parameters?.shortcut).toBe('Ctrl+V');
+        expect(recognizer.recognize('Hepsini seç').parameters?.shortcut).toBe('Ctrl+A');
+      });
+    });
+  });
 });

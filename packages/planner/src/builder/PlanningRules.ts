@@ -111,6 +111,96 @@ export class CopyTextRule implements PlanningRule {
   }
 }
 
+export class OpenApplicationRule implements PlanningRule {
+  matches(context: PlanningContext): boolean {
+    const intent = defaultRecognizer.recognize(context.goal.instruction);
+    return intent.name === 'OPEN_APPLICATION';
+  }
+
+  generateTasks(context: PlanningContext): Task[] {
+    const intent = defaultRecognizer.recognize(context.goal.instruction);
+    const target = (intent.parameters?.target as string) || 'application';
+    return [
+      {
+        id: `${context.goal.id}-task-1`,
+        title: 'Launch Application',
+        description: `Open ${target} application`,
+        status: TaskStatus.Pending,
+        dependsOn: [],
+      },
+    ];
+  }
+}
+
+export class WindowControlRule implements PlanningRule {
+  matches(context: PlanningContext): boolean {
+    const intent = defaultRecognizer.recognize(context.goal.instruction);
+    return (
+      intent.name === 'BRING_TO_FRONT' ||
+      intent.name === 'MINIMIZE_WINDOW' ||
+      intent.name === 'MAXIMIZE_WINDOW' ||
+      intent.name === 'CLOSE_WINDOW'
+    );
+  }
+
+  generateTasks(context: PlanningContext): Task[] {
+    const intent = defaultRecognizer.recognize(context.goal.instruction);
+    return [
+      {
+        id: `${context.goal.id}-task-1`,
+        title: 'Window Action',
+        description: `Execute ${intent.name} window operation`,
+        status: TaskStatus.Pending,
+        dependsOn: [],
+      },
+    ];
+  }
+}
+
+export class MouseActionRule implements PlanningRule {
+  matches(context: PlanningContext): boolean {
+    const intent = defaultRecognizer.recognize(context.goal.instruction);
+    return intent.name === 'MOVE_MOUSE' || intent.name === 'MOUSE_CLICK';
+  }
+
+  generateTasks(context: PlanningContext): Task[] {
+    const intent = defaultRecognizer.recognize(context.goal.instruction);
+    return [
+      {
+        id: `${context.goal.id}-task-1`,
+        title: 'Mouse Action',
+        description: `Execute ${intent.name} mouse operation`,
+        status: TaskStatus.Pending,
+        dependsOn: [],
+      },
+    ];
+  }
+}
+
+export class KeyboardActionRule implements PlanningRule {
+  matches(context: PlanningContext): boolean {
+    const intent = defaultRecognizer.recognize(context.goal.instruction);
+    return (
+      intent.name === 'TYPE_TEXT' ||
+      intent.name === 'PRESS_KEY' ||
+      intent.name === 'KEY_SHORTCUT'
+    );
+  }
+
+  generateTasks(context: PlanningContext): Task[] {
+    const intent = defaultRecognizer.recognize(context.goal.instruction);
+    return [
+      {
+        id: `${context.goal.id}-task-1`,
+        title: 'Keyboard Action',
+        description: `Execute ${intent.name} keyboard operation`,
+        status: TaskStatus.Pending,
+        dependsOn: [],
+      },
+    ];
+  }
+}
+
 export class ListWindowsRule implements PlanningRule {
   matches(context: PlanningContext): boolean {
     const intent = defaultRecognizer.recognize(context.goal.instruction);
@@ -132,8 +222,12 @@ export class ListWindowsRule implements PlanningRule {
 
 export const defaultPlanningRules: PlanningRule[] = [
   new LaunchNotepadRule(),
+  new CopyTextRule(),
   new CaptureScreenRule(),
   new ReadScreenRule(),
-  new CopyTextRule(),
   new ListWindowsRule(),
+  new OpenApplicationRule(),
+  new WindowControlRule(),
+  new MouseActionRule(),
+  new KeyboardActionRule(),
 ];

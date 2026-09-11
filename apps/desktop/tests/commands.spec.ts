@@ -118,4 +118,154 @@ describe('E2E Command Execution in Desktop Core', () => {
     const enRes = await dispatcher.dispatch('unknown command something');
     expect(enRes).toBe("I didn't quite understand that. How would you like me to help?");
   });
+
+  describe('AI-002 Desktop Actions Dispatching', () => {
+    it('handles application launching in English and Turkish', async () => {
+      const mockAppLauncher = {
+        launch: vi.fn().mockImplementation(async (target: string) => {
+          if (target === 'chrome') {
+            return { success: true, alreadyOpen: false, appName: 'Google Chrome' };
+          }
+          if (target === 'vscode') {
+            return { success: true, alreadyOpen: true, appName: 'Visual Studio Code' };
+          }
+          return { success: false, appName: target, error: 'Not found' };
+        }),
+      };
+
+      const dispatcher = new CommandDispatcher({
+        registry,
+        appLauncher: mockAppLauncher,
+      });
+
+      const res1 = await dispatcher.dispatch("Chrome'u aç");
+      expect(mockAppLauncher.launch).toHaveBeenCalledWith('chrome');
+      expect(res1).toBe('Google Chrome açıldı.');
+
+      const res2 = await dispatcher.dispatch('Open Chrome');
+      expect(res2).toBe('Opened Google Chrome.');
+
+      const res3 = await dispatcher.dispatch("VS Code'u aç");
+      expect(res3).toBe('Visual Studio Code zaten açık. Ön plana getirdim.');
+
+      const res4 = await dispatcher.dispatch('Open VS Code');
+      expect(res4).toBe('Visual Studio Code is already open. Brought to front.');
+
+      const res5 = await dispatcher.dispatch('Uygulama aç');
+      expect(res5).toBe('Hangi uygulamayı açmamı istersin?');
+    });
+
+    it('handles window management actions (bring to front, minimize, maximize, close)', async () => {
+      const mockWindowsProvider = {
+        enumerate: vi.fn().mockResolvedValue([
+          { id: '101', title: 'Google Chrome', processName: 'chrome.exe' },
+          { id: '102', title: 'Visual Studio Code', processName: 'Code.exe' },
+        ]),
+        activateWindow: vi.fn().mockResolvedValue(true),
+        minimizeWindow: vi.fn().mockResolvedValue(true),
+        maximizeWindow: vi.fn().mockResolvedValue(true),
+        closeWindow: vi.fn().mockResolvedValue(true),
+      };
+
+      const dispatcher = new CommandDispatcher({
+        registry,
+        windowsProvider: mockWindowsProvider,
+      });
+
+      const resBring = await dispatcher.dispatch('Bring Chrome to front');
+      expect(mockWindowsProvider.activateWindow).toHaveBeenCalledWith('101');
+      expect(resBring).toBe('Brought Google Chrome to front.');
+
+      const resBringTr = await dispatcher.dispatch("Chrome'u öne getir");
+      expect(resBringTr).toBe('Google Chrome ön plana getirildi.');
+
+      const resMin = await dispatcher.dispatch('Minimize current window');
+      expect(mockWindowsProvider.minimizeWindow).toHaveBeenCalled();
+      expect(resMin).toBe('Window minimized.');
+
+      const resMinTr = await dispatcher.dispatch('Pencereyi küçült');
+      expect(resMinTr).toBe('Pencere simge durumuna küçültüldü.');
+
+      const resMax = await dispatcher.dispatch('Maximize current window');
+      expect(mockWindowsProvider.maximizeWindow).toHaveBeenCalled();
+      expect(resMax).toBe('Window maximized.');
+
+      const resClose = await dispatcher.dispatch('Close current window');
+      expect(mockWindowsProvider.closeWindow).toHaveBeenCalled();
+      expect(resClose).toBe('Window closed.');
+
+      const resCloseTr = await dispatcher.dispatch('Pencereyi kapat');
+      expect(resCloseTr).toBe('Pencere kapatıldı.');
+    });
+
+    it('handles mouse actions (move, left click, right click, double click)', async () => {
+      const mockMouse = {
+        move: vi.fn().mockResolvedValue(undefined),
+        leftClick: vi.fn().mockResolvedValue(undefined),
+        rightClick: vi.fn().mockResolvedValue(undefined),
+        doubleClick: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const dispatcher = new CommandDispatcher({
+        registry,
+        mouseController: mockMouse,
+      });
+
+      const resMove = await dispatcher.dispatch('Move mouse to 400, 600');
+      expect(mockMouse.move).toHaveBeenCalledWith(400, 600);
+      expect(resMove).toBe('Moved mouse to (400, 600).');
+
+      const resMoveTr = await dispatcher.dispatch('Fareyi 300 500 konumuna taşı');
+      expect(mockMouse.move).toHaveBeenCalledWith(300, 500);
+      expect(resMoveTr).toBe('Fare (300, 500) konumuna taşındı.');
+
+      const resLeft = await dispatcher.dispatch('Left click');
+      expect(mockMouse.leftClick).toHaveBeenCalled();
+      expect(resLeft).toBe('Left clicked.');
+
+      const resRight = await dispatcher.dispatch('Sağ tıkla');
+      expect(mockMouse.rightClick).toHaveBeenCalled();
+      expect(resRight).toBe('Sağ tıklandı.');
+
+      const resDouble = await dispatcher.dispatch('Çift tıkla');
+      expect(mockMouse.doubleClick).toHaveBeenCalled();
+      expect(resDouble).toBe('Çift tıklandı.');
+    });
+
+    it('handles keyboard actions (type text, press key, shortcuts)', async () => {
+      const mockKeyboard = {
+        typeText: vi.fn().mockResolvedValue(undefined),
+        pressKey: vi.fn().mockResolvedValue(undefined),
+        executeShortcut: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const dispatcher = new CommandDispatcher({
+        registry,
+        keyboardController: mockKeyboard,
+      });
+
+      const resTypeEn = await dispatcher.dispatch('Type "Hello World"');
+      expect(mockKeyboard.typeText).toHaveBeenCalledWith('Hello World');
+      expect(resTypeEn).toBe('Typed "Hello World".');
+
+      const resTypeTr = await dispatcher.dispatch('Metin yaz "Merhaba Kai"');
+      expect(mockKeyboard.typeText).toHaveBeenCalledWith('Merhaba Kai');
+      expect(resTypeTr).toBe('"Merhaba Kai" yazıldı.');
+
+      const resEnter = await dispatcher.dispatch('Press Enter');
+      expect(mockKeyboard.pressKey).toHaveBeenCalledWith('Enter');
+      expect(resEnter).toBe('Pressed Enter.');
+
+      const resEnterTr = await dispatcher.dispatch("Enter'a bas");
+      expect(resEnterTr).toBe('Enter tuşuna basıldı.');
+
+      const resCopy = await dispatcher.dispatch('Ctrl+C');
+      expect(mockKeyboard.executeShortcut).toHaveBeenCalledWith('Ctrl+C');
+      expect(resCopy).toBe('Executed Ctrl+C.');
+
+      const resPasteTr = await dispatcher.dispatch('Yapıştır');
+      expect(mockKeyboard.executeShortcut).toHaveBeenCalledWith('Ctrl+V');
+      expect(resPasteTr).toBe('Ctrl+V kısayolu uygulandı.');
+    });
+  });
 });

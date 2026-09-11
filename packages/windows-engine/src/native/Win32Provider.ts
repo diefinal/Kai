@@ -332,6 +332,38 @@ public class Win32NativeApi {
         SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
     }
 
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+    public const int SW_SHOWNORMAL = 1;
+    public const int SW_SHOWMINIMIZED = 2;
+    public const int SW_MAXIMIZE = 3;
+    public const int SW_RESTORE = 9;
+    public const uint WM_CLOSE = 0x0010;
+
+    public static bool ActivateWindow(IntPtr hWnd) {
+        ShowWindowAsync(hWnd, SW_RESTORE);
+        return SetForegroundWindow(hWnd);
+    }
+
+    public static bool MinimizeWindow(IntPtr hWnd) {
+        return ShowWindowAsync(hWnd, SW_SHOWMINIMIZED);
+    }
+
+    public static bool MaximizeWindow(IntPtr hWnd) {
+        return ShowWindowAsync(hWnd, SW_MAXIMIZE);
+    }
+
+    public static bool CloseWindow(IntPtr hWnd) {
+        return PostMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+    }
+
     public static void TypeText(string text) {
         if (string.IsNullOrEmpty(text)) return;
         foreach (char c in text) {
@@ -710,6 +742,96 @@ $text = ${encoded}
 [Win32NativeApi]::TypeText($text)
 `;
     await this.executePowerShell(psScript);
+  }
+
+  /**
+   * Activates / brings window with the specified handle ID to the foreground.
+   */
+  async activateWindow(id: string): Promise<boolean> {
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+[Win32NativeApi]::ActivateWindow([IntPtr]${id})
+`;
+    try {
+      const output = await this.executePowerShell(psScript);
+      return output.toLowerCase().includes('true');
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Minimizes the window with the given handle ID or foreground window if omitted.
+   */
+  async minimizeWindow(id?: string): Promise<boolean> {
+    const targetId = id ? `[IntPtr]${id}` : '[Win32NativeApi]::GetForegroundWindow()';
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+$target = ${targetId}
+if ($target -ne [IntPtr]::Zero) {
+    [Win32NativeApi]::MinimizeWindow($target)
+} else {
+    $false
+}
+`;
+    try {
+      const output = await this.executePowerShell(psScript);
+      return output.toLowerCase().includes('true');
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Maximizes the window with the given handle ID or foreground window if omitted.
+   */
+  async maximizeWindow(id?: string): Promise<boolean> {
+    const targetId = id ? `[IntPtr]${id}` : '[Win32NativeApi]::GetForegroundWindow()';
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+$target = ${targetId}
+if ($target -ne [IntPtr]::Zero) {
+    [Win32NativeApi]::MaximizeWindow($target)
+} else {
+    $false
+}
+`;
+    try {
+      const output = await this.executePowerShell(psScript);
+      return output.toLowerCase().includes('true');
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Closes the window with the given handle ID or foreground window if omitted.
+   */
+  async closeWindow(id?: string): Promise<boolean> {
+    const targetId = id ? `[IntPtr]${id}` : '[Win32NativeApi]::GetForegroundWindow()';
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+$target = ${targetId}
+if ($target -ne [IntPtr]::Zero) {
+    [Win32NativeApi]::CloseWindow($target)
+} else {
+    $false
+}
+`;
+    try {
+      const output = await this.executePowerShell(psScript);
+      return output.toLowerCase().includes('true');
+    } catch {
+      return false;
+    }
   }
 
   async captureScreen(): Promise<ScreenCapture> {
