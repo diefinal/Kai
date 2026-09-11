@@ -1,3 +1,5 @@
+import { ChatWindow } from './components/ChatWindow';
+
 export interface RendererDomElements {
   title: string;
   status: string;
@@ -6,6 +8,15 @@ export interface RendererDomElements {
 export class RendererApp {
   private titleText: string = 'Kai Desktop';
   private statusText: string = 'Loading...';
+  private chatWindow: ChatWindow;
+
+  constructor() {
+    this.chatWindow = new ChatWindow();
+  }
+
+  getChatWindow(): ChatWindow {
+    return this.chatWindow;
+  }
 
   getElements(): RendererDomElements {
     return {
@@ -16,12 +27,7 @@ export class RendererApp {
 
   mount(rootElement?: any): void {
     if (rootElement) {
-      rootElement.innerHTML =
-        '<div class="container"><h1 class="title">' +
-        this.titleText +
-        '</h1><p class="status">' +
-        this.statusText +
-        '</p></div>';
+      rootElement.innerHTML = this.chatWindow.render();
     }
   }
 }

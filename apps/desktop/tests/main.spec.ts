@@ -63,7 +63,7 @@ describe('Application and Window Lifecycle', () => {
     expect(windowManager.getMainWindow()).toBeNull();
   });
 
-  it('renders Kai Desktop title and loading status in Renderer', () => {
+  it('renders Kai Desktop title and initial state in Renderer', () => {
     const renderer = new RendererApp();
     const elements = renderer.getElements();
 
@@ -72,7 +72,7 @@ describe('Application and Window Lifecycle', () => {
 
     const fakeDom = { innerHTML: '' };
     renderer.mount(fakeDom);
-    expect(fakeDom.innerHTML).toContain('Kai Desktop');
-    expect(fakeDom.innerHTML).toContain('Loading...');
+    expect(fakeDom.innerHTML).toContain('kai-chat-window');
+    expect(fakeDom.innerHTML).toContain('Welcome to Kai');
   });
 });
