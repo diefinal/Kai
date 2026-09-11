@@ -7,8 +7,6 @@ import {
   PlanBuilder,
   TaskScheduler,
   ExecutionContext,
-  TaskStatus,
-  Plan,
 } from '../src';
 
 describe('AgentLoop', () => {
@@ -23,19 +21,18 @@ describe('AgentLoop', () => {
     const events: AgentEvent[] = [];
     loop.onEvent((e) => events.push(e));
 
-    const scheduledPlan = await loop.run(sampleGoal);
+    const result = await loop.run(sampleGoal);
 
-    expect(scheduledPlan).toBeDefined();
-    expect(scheduledPlan.goal).toBe(sampleGoal);
-    expect(scheduledPlan.tasks).toHaveLength(2);
-    expect(scheduledPlan.tasks[0].title).toBe('Capture Screen');
-    expect(scheduledPlan.tasks[1].title).toBe('OCR');
+    expect(result).toBeDefined();
+    expect(result.success).toBe(true);
+    expect(result.completedTasks).toBe(2);
+    expect(typeof result.durationMs).toBe('number');
     expect(loop.getState()).toBe(AgentState.Completed);
 
     // Context contains intermediate and goal references
     const context = loop.getContext();
     expect(context.get('currentGoal')).toBe(sampleGoal);
-    expect(context.get('currentPlan')).toBe(scheduledPlan);
+    expect(context.get('currentPlan')).toBeDefined();
   });
 
   it('Empty plan', async () => {
@@ -46,9 +43,10 @@ describe('AgentLoop', () => {
       createdAt: Date.now(),
     };
 
-    const plan = await loop.run(unknownGoal);
+    const result = await loop.run(unknownGoal);
 
-    expect(plan.tasks).toEqual([]);
+    expect(result.success).toBe(true);
+    expect(result.completedTasks).toBe(0);
     expect(loop.getState()).toBe(AgentState.Completed);
   });
 
@@ -106,9 +104,9 @@ describe('AgentLoop', () => {
     const customContext = new ExecutionContext();
 
     const loop = new AgentLoop(customBuilder, customScheduler, customContext);
-    const plan = await loop.run(sampleGoal);
+    const result = await loop.run(sampleGoal);
 
-    expect(plan).toBeDefined();
+    expect(result.success).toBe(true);
     expect(customContext.get('currentGoal')).toBe(sampleGoal);
   });
 });

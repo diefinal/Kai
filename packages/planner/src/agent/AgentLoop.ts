@@ -3,6 +3,8 @@ import { Plan } from '../model/Plan';
 import { PlanBuilder } from '../builder/PlanBuilder';
 import { TaskScheduler } from '../scheduler/TaskScheduler';
 import { ExecutionContext } from '../context/ExecutionContext';
+import { ExecutionDispatcher } from '../integration/ExecutionDispatcher';
+import { ExecutionResult } from '../integration/ExecutionResult';
 import { AgentState } from './AgentState';
 import { AgentEvent, AgentEventListener } from './AgentEvent';
 
@@ -13,7 +15,8 @@ export class AgentLoop {
   constructor(
     private readonly builder: PlanBuilder = new PlanBuilder(),
     private readonly scheduler: TaskScheduler = new TaskScheduler(),
-    private readonly context: ExecutionContext = new ExecutionContext()
+    private readonly context: ExecutionContext = new ExecutionContext(),
+    private readonly dispatcher: ExecutionDispatcher = new ExecutionDispatcher()
   ) {}
 
   getState(): AgentState {
@@ -46,14 +49,20 @@ export class AgentLoop {
     }
   }
 
-  async run(goal: Goal): Promise<Plan> {
+  async run(goal: Goal): Promise<ExecutionResult> {
     try {
       // 1. Planning
-      this.transition(AgentState.Planning, `Building plan for goal: ${goal.instruction}`);
+      this.transition(
+        AgentState.Planning,
+        `Building plan for goal: ${goal.instruction}`
+      );
       const rawPlan = this.builder.build({ goal });
 
       // 2. Scheduling
-      this.transition(AgentState.Scheduling, `Scheduling tasks for goal: ${goal.instruction}`);
+      this.transition(
+        AgentState.Scheduling,
+        `Scheduling tasks for goal: ${goal.instruction}`
+      );
       const queue = this.scheduler.schedule(rawPlan);
 
       // Create scheduled plan with ordered tasks
@@ -63,14 +72,31 @@ export class AgentLoop {
       };
 
       // 3. Executing (state transition & context setup)
-      this.transition(AgentState.Executing, `Preparing execution context for ${scheduledPlan.tasks.length} task(s)`);
+      this.transition(
+        AgentState.Executing,
+        `Executing ${scheduledPlan.tasks.length} task(s)`
+      );
       this.context.set('currentGoal', goal);
       this.context.set('currentPlan', scheduledPlan);
       this.context.set('executionQueue', queue);
 
-      // 4. Completed
-      this.transition(AgentState.Completed, `Workflow completed successfully for goal: ${goal.instruction}`);
-      return scheduledPlan;
+      // 4. Delegate execution to ExecutionDispatcher
+      const result = await this.dispatcher.dispatch(queue, this.context);
+
+      if (!result.success) {
+        this.transition(
+          AgentState.Failed,
+          `Execution failed on task: ${result.failedTask || 'unknown'}`
+        );
+        return result;
+      }
+
+      // 5. Completed
+      this.transition(
+        AgentState.Completed,
+        `Workflow completed successfully for goal: ${goal.instruction} (${result.completedTasks} tasks in ${result.durationMs}ms)`
+      );
+      return result;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       this.transition(AgentState.Failed, `Workflow failed: ${errorMsg}`);
