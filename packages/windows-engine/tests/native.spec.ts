@@ -6,14 +6,21 @@ import {
   IWindowProvider,
   DisplayManager,
   IDisplayProvider,
+  MouseController,
+  IMouseProvider,
+  MousePosition,
 } from '../src';
 
 class TestableWin32Provider extends Win32Provider {
+  public executedScripts: string[] = [];
+
   constructor(private readonly mockOutputMap: Record<string, string> = {}) {
     super();
   }
 
   protected override async executePowerShell(script: string): Promise<string> {
+    this.executedScripts.push(script);
+
     if (script.includes('[Win32NativeApi]::GetForegroundWindowDto()')) {
       return (
         this.mockOutputMap['GetForegroundWindowDto'] ??
@@ -103,7 +110,17 @@ class TestableWin32Provider extends Win32Provider {
       );
     }
 
-    return super.executePowerShell(script);
+    if (script.includes('[Win32NativeApi]::GetCursorPosition()')) {
+      return (
+        this.mockOutputMap['GetCursorPosition'] ??
+        JSON.stringify({
+          x: 450,
+          y: 650,
+        })
+      );
+    }
+
+    return '';
   }
 }
 
@@ -174,7 +191,6 @@ describe('Win32Provider Native Window API', () => {
   it('Unimplemented methods still throw "Not implemented"', async () => {
     const provider = new Win32Provider();
 
-    await expect(provider.getMousePosition()).rejects.toThrow('Not implemented');
     await expect(provider.captureScreen()).rejects.toThrow('Not implemented');
     await expect(provider.readClipboard()).rejects.toThrow('Not implemented');
     await expect(provider.writeClipboard('test')).rejects.toThrow('Not implemented');
@@ -193,5 +209,102 @@ describe('Win32Provider Native Window API', () => {
     };
     const displayManager = new DisplayManager(mockDisplayProvider);
     expect(displayManager).toBeDefined();
+  });
+});
+
+describe('Win32Provider Native Mouse API', () => {
+  it('current cursor position can be retrieved', async () => {
+    const provider = new TestableWin32Provider();
+    const pos = await provider.getMousePosition();
+
+    expect(pos).toBeDefined();
+    expect(pos.x).toBe(450);
+    expect(pos.y).toBe(650);
+  });
+
+  it('moveMouse delegates correctly', async () => {
+    const provider = new TestableWin32Provider();
+    await provider.moveMouse(800, 600);
+
+    const called = provider.executedScripts.some((s) =>
+      s.includes('[Win32NativeApi]::MoveCursor(800, 600)')
+    );
+    expect(called).toBe(true);
+  });
+
+  it('leftClick delegates correctly', async () => {
+    const provider = new TestableWin32Provider();
+    await provider.leftClick();
+
+    const called = provider.executedScripts.some((s) =>
+      s.includes('[Win32NativeApi]::SendLeftClick()')
+    );
+    expect(called).toBe(true);
+  });
+
+  it('rightClick delegates correctly', async () => {
+    const provider = new TestableWin32Provider();
+    await provider.rightClick();
+
+    const called = provider.executedScripts.some((s) =>
+      s.includes('[Win32NativeApi]::SendRightClick()')
+    );
+    expect(called).toBe(true);
+  });
+
+  it('doubleClick delegates correctly', async () => {
+    const provider = new TestableWin32Provider();
+    await provider.doubleClick();
+
+    const called = provider.executedScripts.some((s) =>
+      s.includes('[Win32NativeApi]::SendDoubleClick()')
+    );
+    expect(called).toBe(true);
+  });
+
+  it('MouseController uses provider with dependency injection', async () => {
+    class MockMouseProv implements IMouseProvider {
+      public pos: MousePosition = { x: 10, y: 20 };
+      public actions: string[] = [];
+
+      async getPosition(): Promise<MousePosition> {
+        return this.pos;
+      }
+      async move(x: number, y: number): Promise<void> {
+        this.pos = { x, y };
+        this.actions.push(`move:${x},${y}`);
+      }
+      async leftClick(): Promise<void> {
+        this.actions.push('leftClick');
+      }
+      async rightClick(): Promise<void> {
+        this.actions.push('rightClick');
+      }
+      async doubleClick(): Promise<void> {
+        this.actions.push('doubleClick');
+      }
+      async click(button: 'left' | 'right' | 'middle' = 'left'): Promise<void> {
+        this.actions.push(`click:${button}`);
+      }
+    }
+
+    const mockProv = new MockMouseProv();
+    const controller = new MouseController(mockProv);
+
+    expect(await controller.getPosition()).toEqual({ x: 10, y: 20 });
+    await controller.move(100, 200);
+    expect(await controller.getPosition()).toEqual({ x: 100, y: 200 });
+    await controller.leftClick();
+    await controller.rightClick();
+    await controller.doubleClick();
+    await controller.click('middle');
+
+    expect(mockProv.actions).toEqual([
+      'move:100,200',
+      'leftClick',
+      'rightClick',
+      'doubleClick',
+      'click:middle',
+    ]);
   });
 });

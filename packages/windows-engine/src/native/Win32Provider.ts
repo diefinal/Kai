@@ -11,6 +11,9 @@ import { WindowInfo } from '../window/Window';
  * - IsWindowVisible
  * - GetForegroundWindow
  * - GetWindowRect
+ * - GetCursorPos
+ * - SetCursorPos
+ * - SendInput
  */
 const WIN32_HELPER_CS = `
 using System;
@@ -29,6 +32,11 @@ public class Win32WindowDto {
     public int height { get; set; }
     public bool isVisible { get; set; }
     public bool isForeground { get; set; }
+}
+
+public class Win32PointDto {
+    public int x { get; set; }
+    public int y { get; set; }
 }
 
 public class Win32NativeApi {
@@ -62,6 +70,46 @@ public class Win32NativeApi {
 
     [DllImport("user32.dll")]
     public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT {
+        public int X;
+        public int Y;
+    }
+
+    [DllImport("user32.dll")]
+    public static extern bool GetCursorPos(out POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetCursorPos(int X, int Y);
+
+    // SendInput structures & constants
+    public const int INPUT_MOUSE = 0;
+    public const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
+    public const uint MOUSEEVENTF_LEFTUP = 0x0004;
+    public const uint MOUSEEVENTF_RIGHTDOWN = 0x0008;
+    public const uint MOUSEEVENTF_RIGHTUP = 0x0010;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MOUSEINPUT {
+        public int dx;
+        public int dy;
+        public uint mouseData;
+        public uint dwFlags;
+        public uint time;
+        public IntPtr dwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct INPUT {
+        [FieldOffset(0)]
+        public int type;
+        [FieldOffset(8)]
+        public MOUSEINPUT mi;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 
     public static List<Win32WindowDto> EnumerateWindows() {
         var windows = new List<Win32WindowDto>();
@@ -167,6 +215,43 @@ public class Win32NativeApi {
             isForeground = true
         };
     }
+
+    public static Win32PointDto GetCursorPosition() {
+        POINT pt;
+        GetCursorPos(out pt);
+        return new Win32PointDto { x = pt.X, y = pt.Y };
+    }
+
+    public static void MoveCursor(int x, int y) {
+        SetCursorPos(x, y);
+    }
+
+    public static void SendMouseClick(uint downFlag, uint upFlag) {
+        INPUT[] inputs = new INPUT[2];
+        inputs[0] = new INPUT {
+            type = INPUT_MOUSE,
+            mi = new MOUSEINPUT { dwFlags = downFlag }
+        };
+        inputs[1] = new INPUT {
+            type = INPUT_MOUSE,
+            mi = new MOUSEINPUT { dwFlags = upFlag }
+        };
+        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
+    }
+
+    public static void SendLeftClick() {
+        SendMouseClick(MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP);
+    }
+
+    public static void SendRightClick() {
+        SendMouseClick(MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP);
+    }
+
+    public static void SendDoubleClick() {
+        SendLeftClick();
+        System.Threading.Thread.Sleep(50);
+        SendLeftClick();
+    }
 }
 `;
 
@@ -181,6 +266,11 @@ interface RawWin32Window {
   height: number;
   isVisible: boolean;
   isForeground: boolean;
+}
+
+interface RawWin32Point {
+  x: number;
+  y: number;
 }
 
 export class Win32Provider implements NativeProvider {
@@ -337,8 +427,80 @@ if ($null -eq $fg) {
     }
   }
 
+  /**
+   * Retrieves the current cursor position using Win32 GetCursorPos API.
+   */
   async getMousePosition(): Promise<MousePosition> {
-    throw new Error('Not implemented');
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+$pos = [Win32NativeApi]::GetCursorPosition()
+$pos | ConvertTo-Json -Compress
+`;
+
+    try {
+      const output = await this.executePowerShell(psScript);
+      if (!output || output === 'null') {
+        return { x: 0, y: 0 };
+      }
+      const pt: RawWin32Point = JSON.parse(output);
+      return { x: pt.x, y: pt.y };
+    } catch {
+      return { x: 0, y: 0 };
+    }
+  }
+
+  /**
+   * Moves mouse cursor to specified coordinates using Win32 SetCursorPos API.
+   */
+  async moveMouse(x: number, y: number): Promise<void> {
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+[Win32NativeApi]::MoveCursor(${Math.round(x)}, ${Math.round(y)})
+`;
+    await this.executePowerShell(psScript);
+  }
+
+  /**
+   * Simulates a left mouse button click using Win32 SendInput API.
+   */
+  async leftClick(): Promise<void> {
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+[Win32NativeApi]::SendLeftClick()
+`;
+    await this.executePowerShell(psScript);
+  }
+
+  /**
+   * Simulates a right mouse button click using Win32 SendInput API.
+   */
+  async rightClick(): Promise<void> {
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+[Win32NativeApi]::SendRightClick()
+`;
+    await this.executePowerShell(psScript);
+  }
+
+  /**
+   * Simulates a double left click using Win32 SendInput API.
+   */
+  async doubleClick(): Promise<void> {
+    const psScript = `
+Add-Type -TypeDefinition @"
+${WIN32_HELPER_CS}
+"@
+[Win32NativeApi]::SendDoubleClick()
+`;
+    await this.executePowerShell(psScript);
   }
 
   async captureScreen(): Promise<ScreenCapture> {
