@@ -148,6 +148,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@kai/planner':
+        specifier: workspace:*
+        version: link:../../packages/planner
       '@kai/shared':
         specifier: workspace:*
         version: link:../../packages/shared

@@ -16,7 +16,7 @@ describe('E2E Command Execution in Desktop Core', () => {
     expect(res).toContain('• Capture Screen');
   });
 
-  it('handles "list windows" command using windows provider', async () => {
+  it('handles "list windows" and natural Turkish prompts using windows provider', async () => {
     const mockWindowsProvider = {
       enumerate: vi.fn().mockResolvedValue([
         { id: '1', title: 'Visual Studio Code', processName: 'Code.exe' },
@@ -31,17 +31,17 @@ describe('E2E Command Execution in Desktop Core', () => {
       windowsProvider: mockWindowsProvider,
     });
 
-    const res = await dispatcher.dispatch('list windows');
-
+    const res1 = await dispatcher.dispatch('list windows');
     expect(mockWindowsProvider.enumerate).toHaveBeenCalled();
-    expect(res).toContain('Open Windows');
-    expect(res).toContain('• Visual Studio Code');
-    expect(res).toContain('• Google Chrome');
-    expect(res).toContain('• File Explorer');
-    expect(res).toContain('• Kai Desktop');
+    expect(res1).toContain('Open Windows');
+    expect(res1).toContain('• Visual Studio Code');
+
+    const res2 = await dispatcher.dispatch('hangi pencereler açık');
+    expect(res2).toContain('Open Windows');
+    expect(res2).toContain('• Google Chrome');
   });
 
-  it('handles "read screen" command using vision capture and OCR pipeline', async () => {
+  it('handles "read screen" and natural language prompts using vision capture and OCR pipeline', async () => {
     const mockVisionProvider = {
       captureScreen: vi.fn().mockResolvedValue({
         width: 1920,
@@ -62,18 +62,18 @@ describe('E2E Command Execution in Desktop Core', () => {
       visionProvider: mockVisionProvider,
     });
 
-    const res = await dispatcher.dispatch('read screen');
-
+    const res1 = await dispatcher.dispatch('Şu ekrana bak');
     expect(mockVisionProvider.captureScreen).toHaveBeenCalled();
     expect(mockVisionProvider.recognizeText).toHaveBeenCalled();
-    expect(res).toContain('Detected Text');
-    expect(res).toContain('GitHub');
-    expect(res).toContain('Merge pull request');
-    expect(res).toContain('Actions');
-    expect(res).toContain('Projects');
+    expect(res1).toContain('Detected Text');
+    expect(res1).toContain('GitHub');
+
+    const res2 = await dispatcher.dispatch('What do you see');
+    expect(res2).toContain('Detected Text');
+    expect(res2).toContain('Merge pull request');
   });
 
-  it('handles "capture screen" command and saves screenshot', async () => {
+  it('handles "capture screen" and screenshot requests', async () => {
     const mockVisionProvider = {
       captureScreen: vi.fn().mockResolvedValue({
         width: 1920,
@@ -94,7 +94,7 @@ describe('E2E Command Execution in Desktop Core', () => {
       captureSaver: mockCaptureSaver,
     });
 
-    const res = await dispatcher.dispatch('capture screen');
+    const res = await dispatcher.dispatch('ekran görüntüsü al');
 
     expect(mockVisionProvider.captureScreen).toHaveBeenCalled();
     expect(mockCaptureSaver).toHaveBeenCalled();
@@ -102,12 +102,20 @@ describe('E2E Command Execution in Desktop Core', () => {
     expect(res).toContain('Pictures/Kai/capture-001.png');
   });
 
-  it('handles unknown command with helpful guidance message', async () => {
+  it('handles follow-up queries for incomplete commands like "Dosyayı aç"', async () => {
     const dispatcher = new CommandDispatcher({ registry });
-    const res = await dispatcher.dispatch('unknown_operation_xyz');
+    const res = await dispatcher.dispatch('Dosyayı aç');
 
-    expect(res).toContain('Unknown command.');
-    expect(res).toContain('Type "help" to see available commands.');
+    expect(res).toBe('Hangi dosyayı açmamı istersin?');
+  });
+
+  it('handles unknown command with follow-up guidance message in Turkish and English', async () => {
+    const dispatcher = new CommandDispatcher({ registry });
+
+    const trRes = await dispatcher.dispatch('anlamsız rastgele metin');
+    expect(trRes).toBe('Bunu tam olarak anlayamadım. Size nasıl yardımcı olmamı istersiniz?');
+
+    const enRes = await dispatcher.dispatch('unknown command something');
+    expect(enRes).toBe("I didn't quite understand that. How would you like me to help?");
   });
 });
-

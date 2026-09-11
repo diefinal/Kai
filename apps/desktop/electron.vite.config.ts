@@ -22,6 +22,11 @@ export default defineConfig({
   renderer: {
     root: resolve(__dirname, 'src/renderer'),
     plugins: [react()],
+    resolve: {
+      alias: {
+        '@kai/planner': resolve(__dirname, '../../packages/planner/src/index.ts'),
+      },
+    },
     build: {
       rollupOptions: {
         input: {
@@ -31,4 +36,3 @@ export default defineConfig({
     },
   },
 });
-

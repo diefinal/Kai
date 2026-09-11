@@ -2,12 +2,21 @@
   "name": "@kai/planner",
   "version": "0.0.1",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -b",
     "lint": "eslint \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-   "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@kai/shared": "workspace:*"

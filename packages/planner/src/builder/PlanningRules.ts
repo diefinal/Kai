@@ -1,15 +1,19 @@
 import { Task } from '../model/Task';
 import { TaskStatus } from '../model/TaskStatus';
 import { PlanningContext } from './PlanningContext';
+import { IntentRecognizer } from '../nlu/IntentRecognizer';
 
 export interface PlanningRule {
   matches(context: PlanningContext): boolean;
   generateTasks(context: PlanningContext): Task[];
 }
 
+const defaultRecognizer = new IntentRecognizer();
+
 export class LaunchNotepadRule implements PlanningRule {
   matches(context: PlanningContext): boolean {
-    return context.goal.instruction.trim().toLowerCase() === 'open notepad';
+    const norm = context.goal.instruction.trim().toLowerCase();
+    return norm === 'open notepad' || norm === 'notepad' || norm === 'notepad aç';
   }
 
   generateTasks(context: PlanningContext): Task[] {
@@ -27,7 +31,8 @@ export class LaunchNotepadRule implements PlanningRule {
 
 export class CaptureScreenRule implements PlanningRule {
   matches(context: PlanningContext): boolean {
-    return context.goal.instruction.trim().toLowerCase() === 'capture screen';
+    const intent = defaultRecognizer.recognize(context.goal.instruction);
+    return intent.name === 'CAPTURE_SCREEN';
   }
 
   generateTasks(context: PlanningContext): Task[] {
@@ -45,7 +50,8 @@ export class CaptureScreenRule implements PlanningRule {
 
 export class ReadScreenRule implements PlanningRule {
   matches(context: PlanningContext): boolean {
-    return context.goal.instruction.trim().toLowerCase() === 'read screen';
+    const intent = defaultRecognizer.recognize(context.goal.instruction);
+    return intent.name === 'READ_SCREEN';
   }
 
   generateTasks(context: PlanningContext): Task[] {
@@ -107,7 +113,8 @@ export class CopyTextRule implements PlanningRule {
 
 export class ListWindowsRule implements PlanningRule {
   matches(context: PlanningContext): boolean {
-    return context.goal.instruction.trim().toLowerCase() === 'list windows';
+    const intent = defaultRecognizer.recognize(context.goal.instruction);
+    return intent.name === 'LIST_WINDOWS';
   }
 
   generateTasks(context: PlanningContext): Task[] {

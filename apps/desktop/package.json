@@ -12,6 +12,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@kai/planner": "workspace:*",
     "@kai/shared": "workspace:*"
   },
   "devDependencies": {

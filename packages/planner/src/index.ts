@@ -5,3 +5,4 @@ export * from './scheduler';
 export * from './context';
 export * from './integration';
 export * from './agent';
+export * from './nlu';

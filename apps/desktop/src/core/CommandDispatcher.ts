@@ -1,3 +1,4 @@
+import { IntentRecognizer } from '@kai/planner';
 import { CommandRegistry } from './CommandRegistry';
 
 export interface WindowInfoLike {
@@ -26,6 +27,7 @@ export interface ScreenCaptureResult {
 
 export interface CommandDispatcherOptions {
   registry?: CommandRegistry;
+  recognizer?: IntentRecognizer;
   windowsProvider?: WindowsEngineProviderLike;
   visionProvider?: VisionEngineProviderLike;
   captureSaver?: () => Promise<ScreenCaptureResult> | ScreenCaptureResult;
@@ -59,12 +61,14 @@ export class DefaultProductionVisionProvider implements VisionEngineProviderLike
 
 export class CommandDispatcher {
   private readonly registry: CommandRegistry;
+  private readonly recognizer: IntentRecognizer;
   private readonly windowsProvider: WindowsEngineProviderLike;
   private readonly visionProvider: VisionEngineProviderLike;
   private readonly captureSaver: () => Promise<ScreenCaptureResult> | ScreenCaptureResult;
 
   constructor(options: CommandDispatcherOptions = {}) {
     this.registry = options.registry || new CommandRegistry();
+    this.recognizer = options.recognizer || new IntentRecognizer();
     this.windowsProvider = options.windowsProvider || new DefaultProductionWindowsProvider();
     this.visionProvider = options.visionProvider || new DefaultProductionVisionProvider();
     this.captureSaver =
@@ -74,49 +78,60 @@ export class CommandDispatcher {
 
   async dispatch(rawInput: string): Promise<string> {
     const input = rawInput.trim();
-    const normalized = input.toLowerCase();
-
     if (!input) {
       return this.registry.getUnknownCommandText();
     }
 
-    if (normalized === 'help' || normalized === '?') {
-      return this.registry.getHelpText();
-    }
+    const intent = this.recognizer.recognize(input);
 
-    if (normalized === 'list windows' || normalized === 'list-windows' || normalized === 'windows') {
-      const windows = await this.windowsProvider.enumerate();
-      const validWindows = windows.filter((w) => w.title && w.title.trim().length > 0);
+    switch (intent.name) {
+      case 'HELP':
+        return this.registry.getHelpText();
 
-      if (validWindows.length === 0) {
-        return 'Open Windows\n\n(No active windows found)';
+      case 'LIST_WINDOWS': {
+        const windows = await this.windowsProvider.enumerate();
+        const validWindows = windows.filter((w) => w.title && w.title.trim().length > 0);
+
+        if (validWindows.length === 0) {
+          return 'Open Windows\n\n(No active windows found)';
+        }
+
+        const listItems = validWindows.map((w) => `• ${w.title.trim()}`).join('\n');
+        return `Open Windows\n\n${listItems}`;
       }
 
-      const listItems = validWindows.map((w) => `• ${w.title.trim()}`).join('\n');
-      return `Open Windows\n\n${listItems}`;
-    }
+      case 'READ_SCREEN': {
+        const screen = await this.visionProvider.captureScreen();
+        const detectedLines = await this.visionProvider.recognizeText(screen.image);
 
-    if (normalized === 'read screen' || normalized === 'read-screen' || normalized === 'ocr') {
-      const screen = await this.visionProvider.captureScreen();
-      const detectedLines = await this.visionProvider.recognizeText(screen.image);
+        if (!detectedLines || detectedLines.length === 0) {
+          return 'Detected Text\n\nNo text detected.';
+        }
 
-      if (!detectedLines || detectedLines.length === 0) {
-        return 'Detected Text\n\nNo text detected.';
+        const textOutput = detectedLines.join('\n\n');
+        return `Detected Text\n\n${textOutput}`;
       }
 
-      const textOutput = detectedLines.join('\n\n');
-      return `Detected Text\n\n${textOutput}`;
+      case 'CAPTURE_SCREEN': {
+        await this.visionProvider.captureScreen();
+        const saveResult = await this.captureSaver();
+        return `Screenshot captured successfully.\n\nSaved:\n${saveResult.savedPath}`;
+      }
+
+      case 'OPEN_FILE': {
+        if (intent.parameters && intent.parameters.followUpQuestion) {
+          return String(intent.parameters.followUpQuestion);
+        }
+        return 'Dosya açma işlemi hazırlanıyor.';
+      }
+
+      case 'UNKNOWN':
+      default: {
+        if (intent.parameters && intent.parameters.followUpQuestion) {
+          return String(intent.parameters.followUpQuestion);
+        }
+        return this.registry.getUnknownCommandText();
+      }
     }
-
-    if (normalized === 'capture screen' || normalized === 'capture-screen' || normalized === 'screenshot') {
-      await this.visionProvider.captureScreen();
-      const saveResult = await this.captureSaver();
-
-      return `Screenshot captured successfully.\n\nSaved:\n${saveResult.savedPath}`;
-    }
-
-    // Unknown command
-    return this.registry.getUnknownCommandText();
   }
 }
- 
