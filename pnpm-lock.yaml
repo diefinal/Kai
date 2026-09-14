@@ -115,6 +115,9 @@ importers:
       '@kai/voice-engine':
         specifier: workspace:*
         version: link:packages/voice-engine
+      '@kai/workflow-engine':
+        specifier: workspace:*
+        version: link:packages/workflow-engine
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.5
@@ -308,6 +311,15 @@ importers:
       '@kai/shared':
         specifier: workspace:*
         version: link:../shared
+
+  packages/workflow-engine:
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^0.30.0
+        version: 0.30.1(lightningcss@1.33.0)(playwright@1.63.0)(supports-color@7.2.0)
 
 packages:
 

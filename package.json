@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@kai/cognitive-engine": "workspace:*",
-    "@kai/voice-engine": "workspace:*"
+    "@kai/voice-engine": "workspace:*",
+    "@kai/workflow-engine": "workspace:*"
   }
 }
