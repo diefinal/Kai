@@ -24,19 +24,24 @@ describe('UI-001 Kai Experience & Avatar Integration', () => {
       it(`renders avatar correctly in ${st} state`, () => {
         const html = renderToString(React.createElement(Avatar, { state: st }));
         expect(html).toContain('kai-avatar-wrapper');
-        expect(html).toContain(`data-state="${st}"`);
-        expect(html).toContain('kai-avatar-svg');
+        const normalized = ['Normal', 'Sleeping'].includes(st) ? 'Idle' 
+                         : st === 'Working' ? 'Thinking' 
+                         : st === 'Reading Screen' ? 'Listening' 
+                         : st;
+        expect(html).toContain(`data-state="${normalized}"`);
+        expect(html).toContain('kai-avatar-svg-face');
       });
     });
 
-    it('renders scanner element when Reading Screen', () => {
-      const html = renderToString(React.createElement(Avatar, { state: 'Reading Screen' }));
-      expect(html).toContain('kai-avatar-scanner');
+    it('renders particles when Thinking', () => {
+      const html = renderToString(React.createElement(Avatar, { state: 'Thinking' }));
+      expect(html).toContain('kai-particles-container');
+      expect(html).toContain('particle p1');
     });
 
-    it('renders sleep z indicators when Sleeping', () => {
-      const html = renderToString(React.createElement(Avatar, { state: 'Sleeping' }));
-      expect(html).toContain('>z<');
+    it('renders smile when Success', () => {
+      const html = renderToString(React.createElement(Avatar, { state: 'Success' }));
+      expect(html).toContain('avatar-smile');
     });
   });
 
