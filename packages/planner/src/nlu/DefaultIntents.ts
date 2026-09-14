@@ -538,4 +538,149 @@ export const DEFAULT_INTENTS: IntentDefinition[] = [
       'gecerli url',
     ],
   },
+  {
+    name: 'READ_DOM',
+    patterns: [
+      // English
+      'read dom',
+      'read web page',
+      'inspect dom',
+      'inspect web page',
+      'read page dom',
+      'get dom',
+      // Turkish
+      'sayfayı oku',
+      'web sayfasını oku',
+      'sayfa içeriğini oku',
+      'dom oku',
+      'domu oku',
+      'sayfayi oku',
+    ],
+  },
+  {
+    name: 'GET_BUTTONS',
+    patterns: [
+      // English
+      'how many buttons are on this page',
+      'how many buttons',
+      'get buttons',
+      'list buttons',
+      'find all buttons',
+      'show buttons',
+      // Turkish
+      'bu sayfada kaç buton var',
+      'kaç buton var',
+      'sayfada kaç buton var',
+      'sayfadaki butonlar',
+      'butonları listele',
+      'butonları göster',
+      'butonları bul',
+    ],
+  },
+  {
+    name: 'GET_FORMS',
+    patterns: [
+      // English
+      'is there a form on this page',
+      'is there a form',
+      'is there any form',
+      'get forms',
+      'list forms',
+      'find forms',
+      'forms on this page',
+      // Turkish
+      'bu sayfada form var mı',
+      'sayfada form var mı',
+      'form var mı',
+      'formları bul',
+      'formları listele',
+      'formları göster',
+    ],
+  },
+  {
+    name: 'GET_INPUTS',
+    patterns: [
+      // English
+      'get inputs',
+      'list inputs',
+      'find inputs',
+      'show inputs',
+      'input fields',
+      // Turkish
+      'inputları bul',
+      'giriş alanlarını bul',
+      'inputları listele',
+      'sayfadaki inputlar',
+      'giriş kutularını bul',
+    ],
+  },
+  {
+    name: 'GET_LINKS',
+    patterns: [
+      // English
+      'get links',
+      'list links',
+      'find links',
+      'show links',
+      // Turkish
+      'linkleri bul',
+      'bağlantıları getir',
+      'linkleri listele',
+      'sayfadaki linkler',
+    ],
+  },
+  {
+    name: 'GET_VISIBLE_TEXT',
+    patterns: [
+      // English
+      'get visible text',
+      'read visible text',
+      'page text',
+      'get text',
+      // Turkish
+      'görünür metni al',
+      'sayfadaki yazıları oku',
+      'sayfa metnini oku',
+      'görünür metin',
+    ],
+  },
+  {
+    name: 'QUERY_DOM',
+    patterns: [
+      // English
+      'find login form',
+      'find form',
+      'find email input',
+      'find email field',
+      'find password box',
+      'find password input',
+      'find login button',
+      'find search button',
+      'find button login',
+      'find textbox search',
+      'find link github',
+      'find input email',
+      'find button',
+      'find input',
+      'find link',
+      'find textbox',
+      // Turkish
+      'giriş formunu bul',
+      'giris formunu bul',
+      'login formunu bul',
+      'email alanını bul',
+      'email alanini bul',
+      'e posta alanını bul',
+      'şifre kutusunu bul',
+      'sifre kutusunu bul',
+      'parola kutusunu bul',
+      'login butonunu bul',
+      'giriş butonunu bul',
+      'ara butonunu bul',
+      'search kutusunu bul',
+      'arama kutusunu bul',
+      'butonu bul',
+      'kutuyu bul',
+    ],
+  },
 ];

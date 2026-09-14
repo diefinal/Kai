@@ -11,17 +11,28 @@ import {
 import { BrowserFactory } from './BrowserFactory';
 import { IPlaywrightProvider } from './BrowserTypes';
 import { DefaultPlaywrightProvider } from './PlaywrightProvider';
+import { DomEngine } from './dom/DomEngine';
+import { DomQueryCriteria } from './dom/DomQuery';
 
 export class BrowserEngine {
   private readonly manager: BrowserManager;
+  private readonly domEngine: DomEngine;
 
-  constructor(provider: IPlaywrightProvider = new DefaultPlaywrightProvider()) {
+  constructor(
+    provider: IPlaywrightProvider = new DefaultPlaywrightProvider(),
+    domEngine: DomEngine = new DomEngine()
+  ) {
     const factory = new BrowserFactory(provider);
     this.manager = new BrowserManager(factory);
+    this.domEngine = domEngine;
   }
 
   getManager(): BrowserManager {
     return this.manager;
+  }
+
+  getDomEngine(): DomEngine {
+    return this.domEngine;
   }
 
   async launch(
@@ -172,6 +183,73 @@ export class BrowserEngine {
       case 'GET_CURRENT_URL': {
         const url = await this.currentUrl(sessionId);
         return { url };
+      }
+
+      case 'READ_DOM': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available for DOM read.');
+        const snapshot = await this.domEngine.readDom(tab);
+        return { snapshot };
+      }
+
+      case 'QUERY_DOM': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available for DOM query.');
+        const criteria: DomQueryCriteria = {
+          text: parameters.text as string | undefined,
+          role: parameters.role as string | undefined,
+          tag: parameters.tag as string | undefined,
+          placeholder: parameters.placeholder as string | undefined,
+          ariaLabel: (parameters.ariaLabel || parameters['aria-label']) as string | undefined,
+          selector: parameters.selector as string | undefined,
+          type: parameters.type as string | undefined,
+          name: parameters.name as string | undefined,
+          visibleOnly: parameters.visibleOnly !== false,
+        };
+        const elements = await this.domEngine.queryDom(tab, criteria);
+        return { elements, count: elements.length, query: criteria };
+      }
+
+      case 'GET_FORMS': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available.');
+        const forms = await this.domEngine.getForms(tab);
+        return { forms, count: forms.length };
+      }
+
+      case 'GET_BUTTONS': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available.');
+        const buttons = await this.domEngine.getButtons(tab);
+        return { buttons, count: buttons.length };
+      }
+
+      case 'GET_INPUTS': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available.');
+        const inputs = await this.domEngine.getInputs(tab);
+        return { inputs, count: inputs.length };
+      }
+
+      case 'GET_LINKS': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available.');
+        const links = await this.domEngine.getLinks(tab);
+        return { links, count: links.length };
+      }
+
+      case 'GET_VISIBLE_TEXT': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available.');
+        const text = await this.domEngine.getVisibleText(tab);
+        return { text };
       }
 
       default:

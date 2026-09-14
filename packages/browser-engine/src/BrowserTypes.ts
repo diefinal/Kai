@@ -53,6 +53,7 @@ export interface IBrowserTab {
   title(): Promise<string>;
   close(): Promise<void>;
   getInfo(isActive?: boolean): Promise<TabInfo>;
+  getPageHandle?(): IPlaywrightPageHandle;
 }
 
 export interface IBrowserSession {
@@ -86,6 +87,8 @@ export interface IPlaywrightPageHandle {
   url(): string;
   title(): Promise<string>;
   close(): Promise<void>;
+  evaluate?: <T, A = unknown>(pageFunction: ((arg: A) => T | Promise<T>) | string, arg?: A) => Promise<T>;
+  content?: () => Promise<string>;
 }
 
 export interface IPlaywrightContextHandle {
@@ -104,3 +107,5 @@ export interface IPlaywrightProvider {
   launch(browserType: BrowserType, options?: BrowserLaunchOptions): Promise<IPlaywrightBrowserHandle>;
   connectOverCDP(endpointURL: string): Promise<IPlaywrightBrowserHandle>;
 }
+
+export * from './dom';

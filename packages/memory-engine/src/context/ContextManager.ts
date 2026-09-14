@@ -3,6 +3,8 @@ import {
   ActiveWindowContext,
   ExecutionPlanContext,
   VisionContext,
+  DomSnapshotContext,
+  DomElementContext,
 } from './ContextTypes';
 
 export class ContextManager {
@@ -153,7 +155,65 @@ export class ContextManager {
           processName: target,
         });
       }
+    } else if (normAction === 'READ_DOM') {
+      const snapshot = (output as any)?.snapshot || (output as any);
+      if (snapshot && typeof snapshot === 'object') {
+        this.recordDomSnapshot({
+          title: snapshot.title || '',
+          url: snapshot.url || '',
+          timestamp: snapshot.timestamp || Date.now(),
+          formsCount: Array.isArray(snapshot.forms) ? snapshot.forms.length : undefined,
+          buttonsCount: Array.isArray(snapshot.buttons) ? snapshot.buttons.length : undefined,
+          inputsCount: Array.isArray(snapshot.inputs) ? snapshot.inputs.length : undefined,
+          linksCount: Array.isArray(snapshot.links) ? snapshot.links.length : undefined,
+          visibleText: snapshot.visibleText,
+          elements: Array.isArray(snapshot.elements) ? snapshot.elements : undefined,
+          raw: snapshot,
+        });
+      }
+    } else if (normAction === 'QUERY_DOM') {
+      const elements = (output as any)?.elements || (Array.isArray(output) ? output : []);
+      const count = typeof (output as any)?.count === 'number' ? (output as any).count : elements.length;
+      this.recordDomQuery(parameters, count, elements[0]);
+    } else if (
+      normAction === 'GET_BUTTONS' ||
+      normAction === 'GET_INPUTS' ||
+      normAction === 'GET_LINKS' ||
+      normAction === 'GET_FORMS'
+    ) {
+      const items =
+        (output as any)?.buttons ||
+        (output as any)?.inputs ||
+        (output as any)?.links ||
+        (output as any)?.forms ||
+        (Array.isArray(output) ? output : []);
+      if (items.length > 0 && typeof items[0] === 'object') {
+        this.context.setLastSelectedElement(items[0]);
+      }
     }
+  }
+
+  recordDomSnapshot(snapshot: DomSnapshotContext): void {
+    this.context.setCurrentDomSnapshot(snapshot);
+  }
+
+  recordDomQuery(
+    criteria: Record<string, unknown>,
+    matchedCount: number,
+    selectedElement?: DomElementContext
+  ): void {
+    this.context.setLastDomQuery({
+      criteria,
+      timestamp: Date.now(),
+      matchedCount,
+    });
+    if (selectedElement) {
+      this.context.setLastSelectedElement(selectedElement);
+    }
+  }
+
+  recordSelectedElement(element: DomElementContext): void {
+    this.context.setLastSelectedElement(element);
   }
 
   recordExecutionPlan(plan: ExecutionPlanContext): void {

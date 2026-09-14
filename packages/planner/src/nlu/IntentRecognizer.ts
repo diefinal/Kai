@@ -127,6 +127,61 @@ export class IntentRecognizer {
       if (match) {
         intent.parameters = { ...(intent.parameters || {}), tabIndex: parseInt(match[1], 10) };
       }
+    } else if (intent.name === 'QUERY_DOM') {
+      const lower = raw.toLowerCase();
+      const params: Record<string, unknown> = { ...(intent.parameters || {}) };
+
+      const quoted = raw.match(/["']([^"']+)["']/);
+      if (quoted) {
+        params.text = quoted[1];
+      }
+
+      if (lower.includes('buton') || lower.includes('button')) {
+        params.role = 'button';
+        if (!params.text) {
+          const btnMatch = raw.match(/(?:find\s+button\s+([a-zA-Z0-9_-]+)|([a-zA-Z0-9_-]+)\s+buton)/i);
+          if (btnMatch) params.text = btnMatch[1] || btnMatch[2];
+        }
+      } else if (lower.includes('form')) {
+        params.role = 'form';
+        if (!params.text) {
+          const formMatch = raw.match(/(?:find\s+([a-zA-Z0-9_-]+)\s+form|([a-zA-Z0-9_-]+)\s+form)/i);
+          if (formMatch) params.text = formMatch[1] || formMatch[2];
+        }
+      } else if (lower.includes('link') || lower.includes('bağlantı') || lower.includes('baglanti')) {
+        params.role = 'link';
+        if (!params.text) {
+          const linkMatch = raw.match(/(?:find\s+link\s+([a-zA-Z0-9_-]+)|([a-zA-Z0-9_-]+)\s+link)/i);
+          if (linkMatch) params.text = linkMatch[1] || linkMatch[2];
+        }
+      } else if (
+        lower.includes('input') ||
+        lower.includes('alan') ||
+        lower.includes('kutu') ||
+        lower.includes('textbox')
+      ) {
+        params.tag = 'input';
+      }
+
+      if (lower.includes('email') || lower.includes('e-posta') || lower.includes('eposta')) {
+        params.tag = 'input';
+        params.placeholder = 'email';
+      } else if (
+        lower.includes('şifre') ||
+        lower.includes('sifre') ||
+        lower.includes('parola') ||
+        lower.includes('password')
+      ) {
+        params.tag = 'input';
+        params.type = 'password';
+      } else if (lower.includes('search') || lower.includes('arama') || lower.includes('ara')) {
+        if (params.role !== 'button') {
+          params.tag = 'input';
+          params.placeholder = params.text || 'search';
+        }
+      }
+
+      intent.parameters = params;
     } else if (intent.name === 'OPEN_FILE' && (!intent.parameters || !intent.parameters.file)) {
       intent.parameters = {
         ...(intent.parameters || {}),

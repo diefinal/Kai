@@ -46,10 +46,48 @@ export interface ExecutionPlanContext {
   createdAt: number;
 }
 
+export interface DomElementContext {
+  id: string;
+  tag: string;
+  role?: string;
+  text?: string;
+  placeholder?: string;
+  ariaLabel?: string;
+  selector: string;
+  visible: boolean;
+  enabled: boolean;
+  type?: string;
+  name?: string;
+  value?: string;
+  href?: string;
+}
+
+export interface DomSnapshotContext {
+  title: string;
+  url: string;
+  timestamp: number;
+  formsCount?: number;
+  buttonsCount?: number;
+  inputsCount?: number;
+  linksCount?: number;
+  visibleText?: string;
+  elements?: DomElementContext[];
+  raw?: unknown;
+}
+
+export interface DomQueryContext {
+  criteria: Record<string, unknown>;
+  timestamp: number;
+  matchedCount: number;
+}
+
 export interface ConversationContextSnapshot {
   currentApplication: string | null;
   currentWindow: ActiveWindowContext | null;
   currentBrowser: BrowserContext | null;
+  currentDomSnapshot: DomSnapshotContext | null;
+  lastDomQuery: DomQueryContext | null;
+  lastSelectedElement: DomElementContext | null;
   lastVisionResult: VisionContext | null;
   lastExecutionPlan: ExecutionPlanContext | null;
   lastExecutedAction: ActionContext | null;
@@ -61,6 +99,9 @@ export interface IConversationContext {
   currentApplication(): string | null;
   currentWindow(): ActiveWindowContext | null;
   currentBrowser(): BrowserContext | null;
+  currentDomSnapshot(): DomSnapshotContext | null;
+  lastDomQuery(): DomQueryContext | null;
+  lastSelectedElement(): DomElementContext | null;
   lastVisionResult(): VisionContext | null;
   lastExecutionPlan(): ExecutionPlanContext | null;
   lastExecutedAction(): ActionContext | null;

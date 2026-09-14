@@ -91,4 +91,8 @@ export class BrowserTab implements IBrowserTab {
       isActive,
     };
   }
+
+  getPageHandle(): IPlaywrightPageHandle {
+    return this.pageHandle;
+  }
 }

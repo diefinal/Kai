@@ -5,3 +5,4 @@ export * from './BrowserSession';
 export * from './BrowserFactory';
 export * from './BrowserManager';
 export * from './BrowserEngine';
+export * from './dom';

@@ -42,6 +42,8 @@ export class DefaultPlaywrightProvider implements IPlaywrightProvider {
                 url: () => page.url(),
                 title: () => page.title(),
                 close: () => page.close(),
+                evaluate: (fn: any, arg?: any) => page.evaluate(fn, arg),
+                content: () => page.content(),
               };
             },
             pages: () => ctx.pages().map((p: any, idx: number) => ({
@@ -53,6 +55,8 @@ export class DefaultPlaywrightProvider implements IPlaywrightProvider {
               url: () => p.url(),
               title: () => p.title(),
               close: () => p.close(),
+              evaluate: (fn: any, arg?: any) => p.evaluate(fn, arg),
+              content: () => p.content(),
             })),
             close: () => ctx.close(),
           };
@@ -127,7 +131,15 @@ export class DefaultPlaywrightProvider implements IPlaywrightProvider {
 export class MockPlaywrightProvider implements IPlaywrightProvider {
   private connected = true;
 
-  constructor(private readonly failLaunch = false, private readonly failInstall = false) {}
+  constructor(
+    private readonly failLaunch = false,
+    private readonly failInstall = false,
+    private defaultHtml = ''
+  ) {}
+
+  setDefaultHtml(html: string): void {
+    this.defaultHtml = html;
+  }
 
   async launch(
     browserType: BrowserType,
@@ -198,6 +210,20 @@ export class MockPlaywrightProvider implements IPlaywrightProvider {
               close: async () => {
                 const idx = pages.indexOf(page);
                 if (idx !== -1) pages.splice(idx, 1);
+              },
+              content: async () =>
+                (page as any).__mockHtml ||
+                this.defaultHtml ||
+                `<html><head><title>${currentTitle}</title></head><body><h1>${currentTitle}</h1></body></html>`,
+              evaluate: async (fn: any, arg?: any) => {
+                if (typeof fn === 'function') {
+                  try {
+                    return await fn(arg);
+                  } catch {
+                    return null;
+                  }
+                }
+                return null;
               },
             };
 

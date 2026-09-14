@@ -6,12 +6,18 @@ import {
   ExecutionPlanContext,
   ConversationContextSnapshot,
   IConversationContext,
+  DomSnapshotContext,
+  DomQueryContext,
+  DomElementContext,
 } from './ContextTypes';
 
 export class ConversationContext implements IConversationContext {
   private _currentApplication: string | null = null;
   private _currentWindow: ActiveWindowContext | null = null;
   private _currentBrowser: BrowserContext | null = null;
+  private _currentDomSnapshot: DomSnapshotContext | null = null;
+  private _lastDomQuery: DomQueryContext | null = null;
+  private _lastSelectedElement: DomElementContext | null = null;
   private _lastVisionResult: VisionContext | null = null;
   private _lastExecutionPlan: ExecutionPlanContext | null = null;
   private _lastExecutedAction: ActionContext | null = null;
@@ -28,6 +34,18 @@ export class ConversationContext implements IConversationContext {
 
   currentBrowser(): BrowserContext | null {
     return this._currentBrowser;
+  }
+
+  currentDomSnapshot(): DomSnapshotContext | null {
+    return this._currentDomSnapshot;
+  }
+
+  lastDomQuery(): DomQueryContext | null {
+    return this._lastDomQuery;
+  }
+
+  lastSelectedElement(): DomElementContext | null {
+    return this._lastSelectedElement;
   }
 
   lastVisionResult(): VisionContext | null {
@@ -70,6 +88,24 @@ export class ConversationContext implements IConversationContext {
     return this;
   }
 
+  setCurrentDomSnapshot(snapshot: DomSnapshotContext | null): this {
+    this._currentDomSnapshot = snapshot;
+    this._updatedAt = Date.now();
+    return this;
+  }
+
+  setLastDomQuery(query: DomQueryContext | null): this {
+    this._lastDomQuery = query;
+    this._updatedAt = Date.now();
+    return this;
+  }
+
+  setLastSelectedElement(element: DomElementContext | null): this {
+    this._lastSelectedElement = element;
+    this._updatedAt = Date.now();
+    return this;
+  }
+
   setLastVisionResult(vision: VisionContext | null): this {
     this._lastVisionResult = vision;
     this._updatedAt = Date.now();
@@ -98,6 +134,9 @@ export class ConversationContext implements IConversationContext {
     this._currentApplication = null;
     this._currentWindow = null;
     this._currentBrowser = null;
+    this._currentDomSnapshot = null;
+    this._lastDomQuery = null;
+    this._lastSelectedElement = null;
     this._lastVisionResult = null;
     this._lastExecutionPlan = null;
     this._lastExecutedAction = null;
@@ -115,6 +154,16 @@ export class ConversationContext implements IConversationContext {
             tabs: this._currentBrowser.tabs ? [...this._currentBrowser.tabs] : undefined,
           }
         : null,
+      currentDomSnapshot: this._currentDomSnapshot
+        ? {
+            ...this._currentDomSnapshot,
+            elements: this._currentDomSnapshot.elements
+              ? [...this._currentDomSnapshot.elements]
+              : undefined,
+          }
+        : null,
+      lastDomQuery: this._lastDomQuery ? { ...this._lastDomQuery } : null,
+      lastSelectedElement: this._lastSelectedElement ? { ...this._lastSelectedElement } : null,
       lastVisionResult: this._lastVisionResult ? { ...this._lastVisionResult } : null,
       lastExecutionPlan: this._lastExecutionPlan
         ? {
