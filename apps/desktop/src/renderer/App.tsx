@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { ChatMessage } from './types';
-import { KaiAvatar, KaiRuntimeState } from './components/KaiAvatar';
+import { KaiAvatar, KaiAvatarState } from './components/avatar';
 import { FormattedMessage } from './components/FormattedMessage';
 import './styles.css';
 
@@ -8,7 +8,7 @@ export const App: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [status, setStatus] = useState<string>('Ready');
-  const [avatarState, setAvatarState] = useState<KaiRuntimeState>('idle');
+  const [avatarState, setAvatarState] = useState<KaiAvatarState>('idle');
   const [loading, setLoading] = useState(false);
   const messageListRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -22,17 +22,6 @@ export const App: React.FC = () => {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-
-  const determineAvatarState = (cmd: string): KaiRuntimeState => {
-    const lower = cmd.toLowerCase().trim();
-    if (lower.includes('read screen') || lower.includes('ocr')) {
-      return 'listening';
-    }
-    if (lower.includes('capture') || lower.includes('list')) {
-      return 'executing';
-    }
-    return 'thinking';
-  };
 
   const handleSend = async (customCommand?: string) => {
     const textToSend = (customCommand ?? inputText).trim();
@@ -108,7 +97,7 @@ export const App: React.FC = () => {
             )
           );
           setAvatarState('error');
-          setStatus('Error Encountered');
+          setStatus('Something went wrong');
           setTimeout(() => {
             setAvatarState('idle');
             setStatus('Ready');
@@ -127,7 +116,7 @@ export const App: React.FC = () => {
     }
   };
 
-  const statusColors: Record<string, string> = {
+  const statusIcons: Record<string, string> = {
     'idle': '🟢',
     'listening': '👂',
     'thinking': '🧠',
@@ -135,7 +124,7 @@ export const App: React.FC = () => {
     'executing': '⚡',
     'speaking': '🗣',
     'completed': '✅',
-    'error': '🔴'
+    'error': '⚠'
   };
 
   return (
@@ -154,7 +143,7 @@ export const App: React.FC = () => {
         <div className="kai-divider" />
         
         <div className="kai-status-indicator">
-           {statusColors[avatarState] || '🟢'} {status}
+           {statusIcons[avatarState] || '🟢'} {status}
         </div>
 
         <div className="kai-divider" />

@@ -1,0 +1,134 @@
+﻿.kai-avatar-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin: 0 auto;
+  transition: all 0.4s ease-in-out;
+}
+
+.kai-avatar-image-container {
+  position: relative;
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: 2;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.kai-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease, filter 0.5s ease;
+}
+
+.kai-avatar-glow-layer {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 50%;
+  z-index: 1;
+  filter: blur(15px);
+  opacity: 0.7;
+  transition: all 0.5s ease;
+}
+
+.kai-avatar-effects {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 50%;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Animations */
+@keyframes breathing {
+  0% { transform: scale(1) translateY(0px); }
+  50% { transform: scale(1.02) translateY(-3px); }
+  100% { transform: scale(1) translateY(0px); }
+}
+
+@keyframes listening-pulse {
+  0% { box-shadow: 0 0 10px rgba(96,165,250,0.4), 0 0 20px rgba(96,165,250,0.2); }
+  50% { box-shadow: 0 0 25px rgba(96,165,250,0.8), 0 0 50px rgba(96,165,250,0.5); }
+  100% { box-shadow: 0 0 10px rgba(96,165,250,0.4), 0 0 20px rgba(96,165,250,0.2); }
+}
+
+@keyframes thinking-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes speaking-jitter {
+  0% { transform: scale(1.02); filter: brightness(1.1); }
+  50% { transform: scale(1.04); filter: brightness(1.2); }
+  100% { transform: scale(1.02); filter: brightness(1.1); }
+}
+
+@keyframes success-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 10px rgba(52,211,153,0.5); }
+  50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(52,211,153,0.9); }
+  100% { transform: scale(1); box-shadow: 0 0 10px rgba(52,211,153,0.5); }
+}
+
+/* States */
+.state-idle .kai-avatar-image-container {
+  animation: breathing 4s ease-in-out infinite;
+}
+.state-idle .kai-avatar-glow-layer {
+  background: radial-gradient(circle, rgba(59,130,246,0.6) 0%, transparent 70%);
+}
+
+.state-listening .kai-avatar-image-container {
+  animation: listening-pulse 1.5s ease-in-out infinite;
+  border-color: rgba(96,165,250,0.8);
+}
+.state-listening .kai-avatar-glow-layer {
+  background: radial-gradient(circle, rgba(96,165,250,0.9) 0%, transparent 70%);
+}
+.state-listening .kai-avatar-img {
+  filter: brightness(1.2);
+}
+
+.state-thinking .kai-avatar-image-container, .state-planning .kai-avatar-image-container {
+  border-color: rgba(6,182,212,0.6);
+}
+.state-thinking .kai-avatar-glow-layer, .state-planning .kai-avatar-glow-layer {
+  background: conic-gradient(from 0deg, transparent, rgba(6,182,212,0.8), transparent);
+  animation: thinking-rotate 3s linear infinite;
+}
+
+.state-speaking .kai-avatar-image-container, .state-executing .kai-avatar-image-container {
+  animation: speaking-jitter 0.2s infinite alternate ease-in-out;
+  border-color: rgba(96,165,250,0.9);
+}
+.state-speaking .kai-avatar-glow-layer, .state-executing .kai-avatar-glow-layer {
+  background: radial-gradient(circle, rgba(59,130,246,1) 0%, transparent 80%);
+}
+
+.state-completed .kai-avatar-image-container {
+  animation: success-pulse 1s ease-out;
+  border-color: rgba(52,211,153,1);
+}
+.state-completed .kai-avatar-glow-layer {
+  background: radial-gradient(circle, rgba(52,211,153,0.8) 0%, transparent 70%);
+}
+.state-completed .kai-avatar-img {
+  /* Green tint for success since we reused the idle image */
+  filter: sepia(1) hue-rotate(90deg) saturate(200%) brightness(1.1);
+}
+
+.state-error .kai-avatar-image-container {
+  border-color: rgba(239,68,68,1);
+}
+.state-error .kai-avatar-glow-layer {
+  background: radial-gradient(circle, rgba(239,68,68,0.8) 0%, transparent 70%);
+}
+.state-error .kai-avatar-img {
+  /* Red tint for error since we reused the idle image */
+  filter: sepia(1) hue-rotate(-50deg) saturate(300%) brightness(0.9);
+}
