@@ -32,6 +32,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@kai/cognitive-engine": "workspace:*"
+    "@kai/cognitive-engine": "workspace:*",
+    "@kai/voice-engine": "workspace:*"
   }
 }

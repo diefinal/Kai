@@ -1,18 +1,14 @@
-{
-  "extends": "../../tsconfig.base.json",
+﻿{
   "compilerOptions": {
-    "composite": true,
-    "outDir": "dist",
-    "rootDir": "src",
+    "target": "ES2022",
     "module": "CommonJS",
-    "target": "ES2022"
+    "declaration": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "include": [
-    "src"
-  ],
-  "references": [
-    {
-      "path": "../shared"
-    }
-  ]
+  "include": ["src/**/*"]
 }

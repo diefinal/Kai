@@ -1,15 +1,17 @@
-{
+﻿{
   "name": "@kai/voice-engine",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "Real-Time Voice Interaction Engine for Kai",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc -b",
-    "lint": "eslint \"src/**/*.ts\"",
-    "typecheck": "tsc --noEmit",
-   "test": "vitest run --passWithNoTests"
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
   },
-  "dependencies": {
-    "@kai/shared": "workspace:*"
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^0.30.0"
   }
 }

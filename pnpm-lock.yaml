@@ -112,6 +112,9 @@ importers:
       '@kai/cognitive-engine':
         specifier: workspace:*
         version: link:packages/cognitive-engine
+      '@kai/voice-engine':
+        specifier: workspace:*
+        version: link:packages/voice-engine
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.5
@@ -292,10 +295,13 @@ importers:
         version: link:../shared
 
   packages/voice-engine:
-    dependencies:
-      '@kai/shared':
-        specifier: workspace:*
-        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^0.30.0
+        version: 0.30.1(lightningcss@1.33.0)(playwright@1.63.0)(supports-color@7.2.0)
 
   packages/windows-engine:
     dependencies:

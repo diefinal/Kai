@@ -1,1 +1,9 @@
-export const name = '@kai/voice-engine';
+﻿export * from './WakeWord';
+export * from './SpeechRecognition';
+export * from './SpeechSynthesis';
+export * from './AudioRouter';
+export * from './Microphone';
+export * from './Speaker';
+export * from './VoiceSettings';
+export * from './LipSync';
+export * from './EmotionController';
