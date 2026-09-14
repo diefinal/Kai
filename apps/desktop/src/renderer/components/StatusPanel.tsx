@@ -1,5 +1,5 @@
 import React from 'react';
-import type { KaiRuntimeState } from '../../components/KaiAvatar';
+import type { KaiRuntimeState } from '../KaiAvatar';
 
 export interface StatusPanelProps {
   state: KaiRuntimeState;

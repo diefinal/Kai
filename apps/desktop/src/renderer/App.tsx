@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { ChatMessage } from './types';
-import { KaiAvatar, KaiRuntimeState } from '../../components/KaiAvatar';
+import { KaiAvatar, KaiRuntimeState } from './components/KaiAvatar';
 import { StatusPanel } from './components/StatusPanel';
 import { WelcomeCard } from './components/WelcomeCard';
 import { FormattedMessage } from './components/FormattedMessage';

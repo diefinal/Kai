@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import './KaiAvatar.css';
 
 import IdleAvatar from '../../assets/avatar/kai-idle.webp';
@@ -38,8 +38,8 @@ export const KaiAvatar: React.FC<KaiAvatarProps> = ({ state, size = 150 }) => {
   }
 
   return (
-    <div className={\kai-official-avatar \\} style={{ width: size, height: size }}>
-      <img src={imgSrc} alt={\Kai Avatar (\)\} />
+    <div className={`kai-official-avatar ${stateClass}`} style={{ width: size, height: size }}>
+      <img src={imgSrc} alt={`Kai Avatar (${state})`} />
     </div>
   );
 };
