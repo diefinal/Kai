@@ -1,21 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { ChatMessage } from './types';
 import { KaiAvatar, KaiRuntimeState } from './components/KaiAvatar';
-import { StatusPanel } from './components/StatusPanel';
-import { WelcomeCard } from './components/WelcomeCard';
 import { FormattedMessage } from './components/FormattedMessage';
+import './styles.css';
 
 export const App: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'initial-1',
-      role: 'assistant',
-      content: 'Welcome to Kai',
-      createdAt: Date.now(),
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  const [status, setStatus] = useState<string>('');
+  const [status, setStatus] = useState<string>('Ready');
   const [avatarState, setAvatarState] = useState<KaiRuntimeState>('idle');
   const [loading, setLoading] = useState(false);
   const messageListRef = useRef<HTMLDivElement>(null);
@@ -31,15 +23,15 @@ export const App: React.FC = () => {
     inputRef.current?.focus();
   }, []);
 
-  const determineAvatarState = (cmd: string): AvatarState => {
+  const determineAvatarState = (cmd: string): KaiRuntimeState => {
     const lower = cmd.toLowerCase().trim();
     if (lower.includes('read screen') || lower.includes('ocr')) {
-      return 'Reading Screen';
+      return 'listening';
     }
     if (lower.includes('capture') || lower.includes('list')) {
-      return 'Working';
+      return 'executing';
     }
-    return 'Thinking';
+    return 'thinking';
   };
 
   const handleSend = async (customCommand?: string) => {
@@ -65,16 +57,16 @@ export const App: React.FC = () => {
     setInputText('');
     setLoading(true);
 
-    // Start with Listening
-    setAvatarState('Listening');
+    // Timeline Simulation
+    setAvatarState('listening');
     setStatus('Listening...');
 
     setTimeout(() => {
-      setAvatarState('Planning');
+      setAvatarState('planning');
       setStatus('Planning...');
 
       setTimeout(async () => {
-        setAvatarState('Executing');
+        setAvatarState('executing');
         setStatus('Executing...');
 
         try {
@@ -95,14 +87,14 @@ export const App: React.FC = () => {
             )
           );
 
-          setAvatarState('Speaking');
+          setAvatarState('speaking');
           setStatus('Speaking...');
 
           setTimeout(() => {
-            setAvatarState('Completed');
+            setAvatarState('completed');
             setStatus('Completed');
             setTimeout(() => {
-              setAvatarState('Idle');
+              setAvatarState('idle');
               setStatus('Ready');
             }, 3000);
           }, 2000);
@@ -115,17 +107,17 @@ export const App: React.FC = () => {
                 : msg
             )
           );
-          setAvatarState('Error');
+          setAvatarState('error');
           setStatus('Error Encountered');
           setTimeout(() => {
-            setAvatarState('Idle');
+            setAvatarState('idle');
             setStatus('Ready');
           }, 4000);
         } finally {
           setLoading(false);
         }
-      }, 500); // 500ms Planning
-    }, 500); // 500ms Listening
+      }, 500);
+    }, 500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -135,113 +127,113 @@ export const App: React.FC = () => {
     }
   };
 
-  const formatTimestamp = (timestamp: number) => {
-    const date = new Date(timestamp);
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
+  const statusColors: Record<string, string> = {
+    'idle': '🟢',
+    'listening': '👂',
+    'thinking': '🧠',
+    'planning': '🧠',
+    'executing': '⚡',
+    'speaking': '🗣',
+    'completed': '✅',
+    'error': '🔴'
   };
 
   return (
-    <div className="kai-app-container">
-      {/* LEFT PANEL: Avatar & Status */}
-      <aside className="kai-left-panel" data-testid="kai-left-panel">
-        <div className="kai-brand-badge">
-          <span className="kai-brand-glow">⚡</span>
-          <span className="kai-brand-title">Kai</span>
-          <span className="kai-brand-version">v0.1.0</span>
+    <div className="kai-app-container glass-theme">
+      {/* LEFT PANEL */}
+      <div className="kai-left-panel glass-panel">
+        <div className="kai-panel-header">
+          <h2>Kai <span className="version">(v1.0)</span></h2>
         </div>
-
+        <div className="kai-divider" />
+        
         <div className="kai-avatar-section">
           <KaiAvatar state={avatarState} size={150} />
-          <StatusPanel state={avatarState} customStatus={status} />
         </div>
+        
+        <div className="kai-divider" />
+        
+        <div className="kai-status-indicator">
+           {statusColors[avatarState] || '🟢'} {status}
+        </div>
+
+        <div className="kai-divider" />
+        
+        <div className="kai-stats-grid">
+          <div className="stat-item"><span className="stat-label">CPU</span><span className="stat-value">12%</span></div>
+          <div className="stat-item"><span className="stat-label">Memory</span><span className="stat-value">4.2GB</span></div>
+          <div className="stat-item"><span className="stat-label">Vision</span><span className="stat-value active">ON</span></div>
+          <div className="stat-item"><span className="stat-label">Browser</span><span className="stat-value standby">STANDBY</span></div>
+          <div className="stat-item"><span className="stat-label">Voice</span><span className="stat-value active">READY</span></div>
+        </div>
+
+        <div className="kai-divider" />
 
         <div className="kai-panel-footer">
-          <div className="kai-system-badge">
-            <span className="kai-system-dot" />
-            <span>Desktop Agent Engine</span>
-          </div>
+          Desktop Agent Engine
         </div>
-      </aside>
+      </div>
 
-      {/* RIGHT PANEL: Conversation & Input */}
-      <main className="kai-right-panel">
-        <header className="kai-chat-topbar">
-          <div className="kai-topbar-info">
-            <h1 className="kai-topbar-title">Kai Assistant</h1>
-            <span className="kai-topbar-mode">Desktop AI Control</span>
-          </div>
-        </header>
-
-        <section className="kai-message-list" ref={messageListRef} id="kai-message-list">
-          <WelcomeCard onQuickPrompt={(p) => handleSend(p)} />
-
-          {messages.map((msg) => {
-            const isUser = msg.role === 'user';
-            const isAssistant = msg.role === 'assistant';
-            const roleClass = 'kai-message-' + msg.role;
-            const authorLabel = isUser ? 'You' : isAssistant ? 'Kai' : 'System';
-
-            return (
-              <div
-                key={msg.id}
-                className={`kai-message-row ${roleClass}`}
-                data-message-id={msg.id}
-              >
-                <div className="kai-message-bubble">
-                  <div className="kai-message-header">
-                    <span className="kai-message-author">{authorLabel}</span>
-                    <span className="kai-message-time">{formatTimestamp(msg.createdAt)}</span>
-                  </div>
-                  <div className="kai-message-content">
-                    {msg.content === 'Thinking...' ? (
-                      <div className="kai-typing-indicator">
-                        <span />
-                        <span />
-                        <span />
-                      </div>
-                    ) : (
-                      <FormattedMessage content={msg.content} />
-                    )}
-                  </div>
+      {/* MAIN CHAT AREA */}
+      <div className="kai-main-area">
+        <div className="kai-chat-messages" ref={messageListRef}>
+          {messages.length === 0 ? (
+            <div className="kai-welcome-wrapper">
+              <div className="glass-card welcome-card">
+                <h2>Merhaba Özgür 👋</h2>
+                <p>Bugün;</p>
+                <ul>
+                  <li>• 2 toplantın var</li>
+                  <li>• GitHub'da 1 PR bekliyor</li>
+                  <li>• Asana'da 4 görev açık</li>
+                </ul>
+                <p className="welcome-prompt">Bugün ne yapmak istersin?</p>
+              </div>
+              
+              <div className="quick-actions-grid">
+                {['VS Code', 'GitHub', 'MongoDB', '360Restoran', 'Asana', 'Outlook'].map(action => (
+                  <button key={action} className="glass-button quick-action-btn" onClick={() => handleSend(`${action} aç`)}>
+                    {action}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            messages.map((msg) => (
+              <div key={msg.id} className={`kai-message ${msg.role}`}>
+                <div className="kai-message-bubble glass-card">
+                   <FormattedMessage content={msg.content} />
                 </div>
               </div>
-            );
-          })}
-        </section>
+            ))
+          )}
+        </div>
 
-        <footer className="kai-message-input-bar">
-          <div className="kai-input-container">
-            <span className="kai-prompt-indicator">&gt;</span>
-            <textarea
-              ref={inputRef}
-              className="kai-input"
-              id="kai-input"
-              placeholder="Kai'ye bir komut veya soru yazın (Enter ile gönder, Shift+Enter yeni satır)..."
-              value={inputText}
-              rows={1}
-              disabled={loading}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <button
-              className="kai-send-button"
-              id="kai-send-btn"
-              disabled={loading || !inputText.trim()}
+        <div className="kai-input-area glass-panel">
+          <textarea
+            ref={inputRef}
+            className="kai-input"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Bir mesaj yazın..."
+            rows={1}
+          />
+          <div className="kai-input-actions">
+            <button className="icon-btn" title="Voice (Ready)">🎤</button>
+            <button className="icon-btn" title="Attach">📎</button>
+            <button className="icon-btn" title="Screenshot">📷</button>
+            <button className="icon-btn" title="Keyboard">⌨</button>
+            <button 
+              className="icon-btn send-btn" 
               onClick={() => handleSend()}
-              type="button"
-              title="Gönder"
+              disabled={loading || !inputText.trim()}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-              </svg>
+              ➤
             </button>
           </div>
-        </footer>
-      </main>
+        </div>
+      </div>
     </div>
   );
 };
-
-export default App;

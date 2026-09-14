@@ -14,109 +14,65 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback
       setCopied(false);
     }
   };
 
   return (
-    <div className="kai-codeblock-wrapper">
-      <div className="kai-codeblock-header">
-        <span className="kai-codeblock-lang">{language || 'text'}</span>
-        <button
-          className="kai-codeblock-copy-btn"
-          onClick={handleCopy}
-          type="button"
-          title="Kopyala"
-        >
-          {copied ? '✓ Kopyalandı' : 'Kopyala'}
-        </button>
+    <div className="kai-code-block glass-card">
+      <div className="kai-code-header">
+        <span className="kai-code-lang">{language || 'text'}</span>
+        <button className="icon-btn" onClick={handleCopy}>{copied ? 'Copied!' : 'Copy'}</button>
       </div>
-      <pre className="kai-codeblock-pre">
-        <code>{code}</code>
-      </pre>
+      <pre><code>{code}</code></pre>
     </div>
   );
 };
 
-export interface FormattedMessageProps {
-  content: string;
-}
+export const ProgressCard: React.FC<{ title: string; progress: number }> = ({ title, progress }) => (
+  <div className="glass-card kai-tool-card">
+    <h4>{title}</h4>
+    <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${progress}%` }}></div></div>
+  </div>
+);
 
-export const FormattedMessage: React.FC<FormattedMessageProps> = ({ content }) => {
-  // Regex to split code blocks: ```lang ... ```
-  const codeBlockRegex = /```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
+export const FileCard: React.FC<{ filename: string; size: string }> = ({ filename, size }) => (
+  <div className="glass-card kai-tool-card">
+    <h4>📄 {filename}</h4><p className="stat-label">{size}</p>
+  </div>
+);
 
-  while ((match = codeBlockRegex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      const textChunk = content.substring(lastIndex, match.index);
-      parts.push(renderFormattedText(textChunk, `text-${lastIndex}`));
-    }
+export const ToolCard: React.FC<{ tool: string; status: string }> = ({ tool, status }) => (
+  <div className="glass-card kai-tool-card">
+    <h4>🔧 {tool}</h4><p className={`stat-value ${status.toLowerCase()}`}>{status}</p>
+  </div>
+);
 
-    const lang = match[1] || '';
-    const code = match[2] || '';
-    parts.push(
-      <CodeBlock key={`code-${match.index}`} language={lang} code={code.trimEnd()} />
-    );
-    lastIndex = match.index + match[0].length;
-  }
+export const StatusCard: React.FC<{ status: string; detail: string }> = ({ status, detail }) => (
+  <div className="glass-card kai-tool-card">
+    <h4>{status}</h4><p className="stat-label">{detail}</p>
+  </div>
+);
 
-  if (lastIndex < content.length) {
-    const textChunk = content.substring(lastIndex);
-    parts.push(renderFormattedText(textChunk, `text-${lastIndex}`));
-  }
+export const FormattedMessage: React.FC<{ content: string }> = ({ content }) => {
+  if (content.includes('[PROGRESS]')) return <ProgressCard title="Scanning Files" progress={60} />;
+  if (content.includes('[FILE]')) return <FileCard filename="architecture.md" size="14 KB" />;
+  if (content.includes('[TOOL]')) return <ToolCard tool="Browser Engine" status="ACTIVE" />;
+  if (content.includes('[STATUS]')) return <StatusCard status="System Update" detail="Downloading v1.0.1" />;
 
-  return <div className="kai-formatted-message">{parts}</div>;
-};
+  const parts = content.split(/(```[\s\S]*?```)/g);
 
-function renderFormattedText(text: string, keyPrefix: string): React.ReactNode {
-  const lines = text.split('\n');
   return (
-    <div key={keyPrefix} className="kai-text-chunk">
-      {lines.map((line, idx) => {
-        // Bullet items
-        const isBullet = line.trimStart().startsWith('•') || line.trimStart().startsWith('- ');
-        const formattedLine = formatInlineMarkdown(line);
-
-        return (
-          <p
-            key={`${keyPrefix}-line-${idx}`}
-            className={isBullet ? 'kai-bullet-line' : 'kai-prose-line'}
-          >
-            {formattedLine}
-          </p>
-        );
+    <div className="kai-formatted-message">
+      {parts.map((part, index) => {
+        if (part.startsWith('```') && part.endsWith('```')) {
+          const match = part.match(/^```(\w+)?\n([\s\S]*)```$/);
+          if (match) {
+            return <CodeBlock key={index} language={match[1]} code={match[2].trim()} />;
+          }
+        }
+        return <p key={index}>{part}</p>;
       })}
     </div>
   );
-}
-
-function formatInlineMarkdown(text: string): React.ReactNode {
-  // Simple bold **text** and inline code `code`
-  const parts: React.ReactNode[] = [];
-  const regex = /(\*\*.*?\*\*|`.*?`)/g;
-  let lastIdx = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIdx) {
-      parts.push(text.substring(lastIdx, match.index));
-    }
-    const token = match[1];
-    if (token.startsWith('**') && token.endsWith('**')) {
-      parts.push(<strong key={match.index}>{token.slice(2, -2)}</strong>);
-    } else if (token.startsWith('`') && token.endsWith('`')) {
-      parts.push(<code key={match.index} className="kai-inline-code">{token.slice(1, -1)}</code>);
-    }
-    lastIdx = match.index + token.length;
-  }
-
-  if (lastIdx < text.length) {
-    parts.push(text.substring(lastIdx));
-  }
-
-  return parts.length > 0 ? parts : text;
-}
+};
