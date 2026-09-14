@@ -1,5 +1,7 @@
 import { spawn } from 'child_process';
 import { NativeProvider, MousePosition, ScreenCapture } from './NativeProvider';
+import { IWindowProvider } from './WindowProvider';
+import { IMouseProvider } from '../input/MouseProvider';
 import { WindowInfo } from '../window/Window';
 import { Key } from '../input/Key';
 import { InputProvider } from '../input/InputProvider';
@@ -457,7 +459,7 @@ function getVirtualKeyCode(key: Key): { vk: number; extended: boolean } {
   }
 }
 
-export class Win32Provider implements NativeProvider, InputProvider {
+export class Win32Provider implements NativeProvider, InputProvider, IWindowProvider, IMouseProvider {
   /**
    * Helper to execute PowerShell scripts on Windows to call native Win32 APIs.
    */
@@ -832,6 +834,27 @@ if ($target -ne [IntPtr]::Zero) {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Alias to getWindows() satisfying IWindowProvider interface.
+   */
+  async enumerate(): Promise<WindowInfo[]> {
+    return this.getWindows();
+  }
+
+  /**
+   * Alias to moveMouse() satisfying IMouseProvider interface.
+   */
+  async move(x: number, y: number): Promise<void> {
+    return this.moveMouse(x, y);
+  }
+
+  /**
+   * Alias to getMousePosition() satisfying IMouseProvider interface.
+   */
+  async getPosition(): Promise<MousePosition> {
+    return this.getMousePosition();
   }
 
   async captureScreen(): Promise<ScreenCapture> {

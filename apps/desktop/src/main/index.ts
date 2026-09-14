@@ -4,6 +4,8 @@ import { Application } from './Application';
 import { WindowManager, ElectronWindowFactory } from './WindowManager';
 import { IpcHandler, ElectronIpcBridgeServer } from './IpcHandler';
 import { WindowStateStore } from './WindowStateStore';
+import { CommandDispatcher } from '../core/CommandDispatcher';
+import { createProductionWindowsDependencies } from '@kai/windows-engine';
 
 export * from './WindowStateStore';
 export * from './WindowManager';
@@ -21,7 +23,11 @@ if (typeof process !== 'undefined' && process.versions && process.versions.elect
     new WindowStateStore(),
     new ElectronWindowFactory(BrowserWindow)
   );
-  const ipcHandler = new IpcHandler(new ElectronIpcBridgeServer(ipcMain));
+  const commandDispatcher = new CommandDispatcher(createProductionWindowsDependencies());
+  const ipcHandler = new IpcHandler(
+    new ElectronIpcBridgeServer(ipcMain),
+    commandDispatcher
+  );
 
   const application = new Application(windowManager, ipcHandler, app, {
     isDev,

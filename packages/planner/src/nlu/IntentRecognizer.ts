@@ -85,9 +85,19 @@ export class IntentRecognizer {
         };
       }
     } else if (intent.name === 'MOVE_MOUSE') {
-      const coords = this.extractCoordinates(raw);
-      if (coords) {
-        intent.parameters = { ...(intent.parameters || {}), ...coords };
+      const namedTarget = this.extractMouseTarget(raw);
+      if (namedTarget) {
+        intent.parameters = { ...(intent.parameters || {}), target: namedTarget };
+      } else {
+        const relativeMove = this.extractRelativeMouseMove(raw);
+        if (relativeMove) {
+          intent.parameters = { ...(intent.parameters || {}), ...relativeMove };
+        } else {
+          const coords = this.extractCoordinates(raw);
+          if (coords) {
+            intent.parameters = { ...(intent.parameters || {}), ...coords };
+          }
+        }
       }
     } else if (intent.name === 'MOUSE_CLICK') {
       const clickInfo = this.extractClickInfo(raw);
@@ -225,7 +235,7 @@ export class IntentRecognizer {
   }
 
   private extractAppTarget(text: string): string | undefined {
-    const lower = text.toLowerCase();
+    const lower = text.toLowerCase().replace(/i\u0307/g, 'i');
     if (lower.includes('chrome')) return 'chrome';
     if (lower.includes('edge')) return 'edge';
     if (lower.includes('tarayıcı') || lower.includes('tarayici') || lower.includes('browser')) {
@@ -242,8 +252,31 @@ export class IntentRecognizer {
     if (lower.includes('notepad') || lower.includes('not defteri') || lower.includes('notdefteri')) {
       return 'notepad';
     }
+    if (
+      lower.includes('hesap makinesi') ||
+      lower.includes('hesapmakinesi') ||
+      lower.includes('calculator') ||
+      lower.includes('calc')
+    ) {
+      return 'calc';
+    }
     if (lower.includes('explorer') || lower.includes('gezgini') || lower.includes('dosya')) {
       return 'explorer';
+    }
+    if (lower.includes('powershell') || lower.includes('pwsh')) {
+      return 'powershell';
+    }
+    if (
+      lower.includes('komut istemi') ||
+      lower.includes('komutistemi') ||
+      lower.includes('command prompt') ||
+      lower.includes('commandprompt') ||
+      lower.includes('cmd')
+    ) {
+      return 'cmd';
+    }
+    if (lower.includes('terminal') || lower.includes('wt')) {
+      return 'wt';
     }
     return undefined;
   }
@@ -258,6 +291,134 @@ export class IntentRecognizer {
     }
     return undefined;
   }
+
+  /**
+   * Extracts a named mouse target position from natural language.
+   * Returns a canonical target string like 'top_right', 'center', etc.
+   */
+  private extractMouseTarget(text: string): string | undefined {
+    const lower = text
+      .toLowerCase()
+      .replace(/i\u0307/g, 'i')
+      .replace(/[.,?!:;'"()-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Turkish: sağ üst / sag ust
+    if (
+      (lower.includes('sağ') || lower.includes('sag')) &&
+      (lower.includes('üst') || lower.includes('ust'))
+    ) {
+      return 'top_right';
+    }
+    // Turkish: sol üst / sol ust
+    if (
+      lower.includes('sol') &&
+      (lower.includes('üst') || lower.includes('ust'))
+    ) {
+      return 'top_left';
+    }
+    // Turkish: sağ alt / sag alt
+    if (
+      (lower.includes('sağ') || lower.includes('sag')) &&
+      lower.includes('alt')
+    ) {
+      return 'bottom_right';
+    }
+    // Turkish: sol alt
+    if (lower.includes('sol') && lower.includes('alt')) {
+      return 'bottom_left';
+    }
+    // English: top right
+    if (lower.includes('top') && lower.includes('right')) {
+      return 'top_right';
+    }
+    // English: top left
+    if (lower.includes('top') && lower.includes('left')) {
+      return 'top_left';
+    }
+    // English: bottom right
+    if (lower.includes('bottom') && lower.includes('right')) {
+      return 'bottom_right';
+    }
+    // English: bottom left
+    if (lower.includes('bottom') && lower.includes('left')) {
+      return 'bottom_left';
+    }
+    // Center / orta
+    if (
+      lower.includes('center') ||
+      lower.includes('centre') ||
+      lower.includes('middle') ||
+      lower.includes('orta')
+    ) {
+      return 'center';
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Extracts relative mouse movement from natural language.
+   * Returns deltaX / deltaY values for directional or pixel-based movement.
+   */
+  private extractRelativeMouseMove(
+    text: string
+  ): { deltaX: number; deltaY: number } | undefined {
+    const lower = text
+      .toLowerCase()
+      .replace(/i\u0307/g, 'i')
+      .replace(/[.,?!:;'"()-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Extract pixel count if present (e.g., "100 piksel", "100 pixels")
+    const pixelMatch = /(\d+)\s*(?:piksel|pixel|px)?/.exec(lower);
+    const amount = pixelMatch ? parseInt(pixelMatch[1], 10) : 100; // default 100px for "biraz"
+
+    const isRelative =
+      lower.includes('biraz') ||
+      lower.includes('piksel') ||
+      lower.includes('pixel') ||
+      lower.includes('px') ||
+      /\d+\s*(?:piksel|pixel|px)/.test(lower) ||
+      // English relative patterns without number
+      /move\s+(?:mouse|cursor)\s+(?:up|down|left|right)/i.test(lower);
+
+    if (!isRelative) {
+      return undefined;
+    }
+
+    // Determine direction
+    if (
+      lower.includes('yukarı') ||
+      lower.includes('yukari') ||
+      lower.includes(' up')
+    ) {
+      return { deltaX: 0, deltaY: -amount };
+    }
+    if (
+      lower.includes('aşağı') ||
+      lower.includes('asagi') ||
+      lower.includes('indir') ||
+      lower.includes(' down')
+    ) {
+      return { deltaX: 0, deltaY: amount };
+    }
+    if (
+      lower.includes('sağa') ||
+      lower.includes('saga') ||
+      lower.includes(' right')
+    ) {
+      return { deltaX: amount, deltaY: 0 };
+    }
+    if (lower.includes('sola') || lower.includes(' left')) {
+      return { deltaX: -amount, deltaY: 0 };
+    }
+
+    return undefined;
+  }
+
 
   private extractClickInfo(text: string): { button: 'left' | 'right'; type: 'single' | 'double' } {
     const lower = text.toLowerCase();
@@ -365,6 +526,7 @@ export class IntentRecognizer {
   private normalize(str: string): string {
     return str
       .toLowerCase()
+      .replace(/i\u0307/g, 'i')
       .replace(/[.,?!:;'"()-]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();

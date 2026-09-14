@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CommandDispatcher } from '../src/core/CommandDispatcher';
+import { createProductionWindowsDependencies } from '@kai/windows-engine';
 import { CommandRegistry } from '../src/core/CommandRegistry';
 
 describe('E2E Command Execution in Desktop Core', () => {
@@ -266,6 +267,38 @@ describe('E2E Command Execution in Desktop Core', () => {
       const resPasteTr = await dispatcher.dispatch('Yapıştır');
       expect(mockKeyboard.executeShortcut).toHaveBeenCalledWith('Ctrl+V');
       expect(resPasteTr).toBe('Ctrl+V kısayolu uygulandı.');
+    });
+
+    it('emits structured logs in format: Intent -> Target -> Execution -> Verification', async () => {
+      const logs: string[] = [];
+      const mockAppLauncher = {
+        launch: vi.fn().mockResolvedValue({
+          success: true,
+          alreadyOpen: false,
+          appName: 'Notepad',
+        }),
+      };
+
+      const dispatcher = new CommandDispatcher({
+        registry,
+        appLauncher: mockAppLauncher,
+        logger: (msg) => logs.push(msg),
+      });
+
+      await dispatcher.dispatch('Open Notepad');
+
+      expect(logs).toHaveLength(1);
+      expect(logs[0]).toBe(
+        '[CommandDispatcher] Intent: OPEN_APPLICATION, Target: notepad, Execution: windows.launch, Verification: Success'
+      );
+    });
+
+    it('createProductionWindowsDependencies instantiates real Windows engine components', () => {
+      const deps = createProductionWindowsDependencies();
+      expect(deps.windowsProvider).toBeDefined();
+      expect(deps.appLauncher).toBeDefined();
+      expect(deps.mouseController).toBeDefined();
+      expect(deps.keyboardController).toBeDefined();
     });
   });
 });
