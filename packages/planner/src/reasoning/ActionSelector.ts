@@ -1,10 +1,37 @@
-import { AnalyzedGoal, StepCandidate } from './ReasoningTypes';
+import { AnalyzedGoal, StepCandidate, ToolRegistryLike } from './ReasoningTypes';
 
 export class ActionSelector {
+  constructor(private readonly toolRegistry?: ToolRegistryLike) {}
+
   selectActions(analyzed: AnalyzedGoal): StepCandidate[] {
     const candidates: StepCandidate[] = [];
 
+    // 1. Dynamic Tool Registry lookup
+    if (this.toolRegistry) {
+      const allTools = this.toolRegistry.list();
+      for (const subgoal of analyzed.subGoals) {
+        const matching = allTools.find(
+          (t) =>
+            t.id.toLowerCase() === subgoal.toLowerCase() ||
+            t.name.toLowerCase() === subgoal.toLowerCase() ||
+            t.capabilities?.some((c) => c.toLowerCase() === subgoal.toLowerCase())
+        );
+        if (matching) {
+          candidates.push({
+            action: matching.id,
+            parameters: {},
+            phase: 'execution',
+            isSensitive: matching.confirmationRequired,
+          });
+        }
+      }
+      if (candidates.length > 0) {
+        return candidates;
+      }
+    }
+
     for (const subgoal of analyzed.subGoals) {
+
       switch (subgoal) {
         case 'ensure_browser_open':
           candidates.push({

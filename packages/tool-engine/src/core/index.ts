@@ -5,7 +5,7 @@ export class ToolContext {
   constructor(public data: Record<string, any> = {}) {}
 }
 
-export class ToolRegistry implements IToolRegistry {
+export class LegacyToolRegistry implements IToolRegistry {
   private tools = new Map<string, ITool>();
 
   constructor(private eventBus: IEventBus) {}
@@ -32,12 +32,14 @@ export class ToolRegistry implements IToolRegistry {
     return Array.from(this.tools.values());
   }
 }
+export { LegacyToolRegistry as ToolRegistry };
 
-export class ToolResolver implements IToolResolver {
+export class LegacyToolResolver implements IToolResolver {
   constructor(private registry: IToolRegistry, private eventBus: IEventBus) {}
 
   resolve(capability: string, platform: string = 'any'): ITool | null {
     const tools = this.registry.getToolsByCapability(capability);
+
     
     // Filter by platform
     const platformTools = tools.filter(t => 
@@ -55,8 +57,10 @@ export class ToolResolver implements IToolResolver {
     return selected;
   }
 }
+export { LegacyToolResolver as ToolResolver };
 
 export class ToolExecutor implements IToolExecutor {
+
   constructor(private eventBus: IEventBus) {}
 
   async execute(tool: ITool, capability: string, context: ToolContext): Promise<any> {
@@ -76,15 +80,16 @@ export class ToolExecutor implements IToolExecutor {
 }
 
 export class ToolEngine {
-  public registry: ToolRegistry;
-  public resolver: ToolResolver;
+  public registry: LegacyToolRegistry;
+  public resolver: LegacyToolResolver;
   public executor: ToolExecutor;
 
   constructor(private eventBus: IEventBus, private currentPlatform: string = 'any') {
-    this.registry = new ToolRegistry(this.eventBus);
-    this.resolver = new ToolResolver(this.registry, this.eventBus);
+    this.registry = new LegacyToolRegistry(this.eventBus);
+    this.resolver = new LegacyToolResolver(this.registry, this.eventBus);
     this.executor = new ToolExecutor(this.eventBus);
   }
+
 
   async loadPlugin(pluginObj: ITool) {
     this.registry.register(pluginObj);

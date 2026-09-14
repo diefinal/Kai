@@ -59,3 +59,23 @@ export interface StepCandidate {
   isSensitive?: boolean;
   sensitivityReason?: string;
 }
+
+export interface ToolDescriptorLike {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  parameters?: Record<string, unknown>;
+  permissions?: string[];
+  confirmationRequired?: boolean;
+  capabilities?: string[];
+  tags?: string[];
+}
+
+export interface ToolRegistryLike {
+  list(): ToolDescriptorLike[];
+  find(id: string): unknown | undefined;
+  findByCategory(category: string): unknown[];
+  findByCapability?(capability: string): unknown[];
+}
+

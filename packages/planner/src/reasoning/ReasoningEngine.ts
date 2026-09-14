@@ -3,25 +3,38 @@ import { GoalAnalyzer } from './GoalAnalyzer';
 import { ActionSelector } from './ActionSelector';
 import { ConstraintResolver } from './ConstraintResolver';
 import { StrategyBuilder } from './StrategyBuilder';
-import { ConversationContextLike, ReasoningContext, Strategy } from './ReasoningTypes';
+import {
+  ConversationContextLike,
+  ReasoningContext,
+  Strategy,
+  ToolRegistryLike,
+} from './ReasoningTypes';
 
 export class ReasoningEngine {
   private readonly analyzer: GoalAnalyzer;
   private readonly selector: ActionSelector;
   private readonly resolver: ConstraintResolver;
   private readonly builder: StrategyBuilder;
+  private readonly toolRegistry?: ToolRegistryLike;
 
   constructor(
     analyzer: GoalAnalyzer = new GoalAnalyzer(),
-    selector: ActionSelector = new ActionSelector(),
+    selector?: ActionSelector,
     resolver: ConstraintResolver = new ConstraintResolver(),
-    builder: StrategyBuilder = new StrategyBuilder()
+    builder: StrategyBuilder = new StrategyBuilder(),
+    toolRegistry?: ToolRegistryLike
   ) {
     this.analyzer = analyzer;
-    this.selector = selector;
+    this.toolRegistry = toolRegistry;
+    this.selector = selector || new ActionSelector(toolRegistry);
     this.resolver = resolver;
     this.builder = builder;
   }
+
+  getToolRegistry(): ToolRegistryLike | undefined {
+    return this.toolRegistry;
+  }
+
 
   getAnalyzer(): GoalAnalyzer {
     return this.analyzer;
