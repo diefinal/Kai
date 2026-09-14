@@ -148,6 +148,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@kai/browser-engine':
+        specifier: workspace:*
+        version: link:../../packages/browser-engine
       '@kai/planner':
         specifier: workspace:*
         version: link:../../packages/planner

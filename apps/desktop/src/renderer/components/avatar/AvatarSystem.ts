@@ -2,7 +2,7 @@ export type AvatarState =
   // Legacy states (kept for backwards compatibility)
   | 'Normal' | 'Reading Screen' | 'Working' | 'Sleeping'
   // New Living Kai states
-  | 'Idle' | 'Listening' | 'Thinking' | 'Speaking' | 'Success' | 'Error';
+  | 'Idle' | 'Listening' | 'Thinking' | 'Planning' | 'Executing' | 'Speaking' | 'Success' | 'Completed' | 'Error';
 
 export type AvatarTheme = 'Light' | 'Dark' | 'Cyber Blue';
 

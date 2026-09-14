@@ -61,55 +61,71 @@ export const App: React.FC = () => {
       createdAt: Date.now(),
     };
 
-    const state = determineAvatarState(textToSend);
-    setAvatarState(state);
-    setStatus(state === 'Reading Screen' ? 'Reading Screen...' : 'Thinking...');
-
     setMessages((prev) => [...prev, userMessage, thinkingMessage]);
     setInputText('');
     setLoading(true);
 
-    try {
-      let responseText = 'Command received.';
-      if (typeof window !== 'undefined' && window.kai && window.kai.executeCommand) {
-        responseText = await window.kai.executeCommand(textToSend);
-      } else {
-        const { CommandDispatcher } = await import('../core/CommandDispatcher');
-        const dispatcher = new CommandDispatcher();
-        responseText = await dispatcher.dispatch(textToSend);
-      }
+    // Start with Listening
+    setAvatarState('Listening');
+    setStatus('Listening...');
 
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === thinkingId
-            ? { ...msg, content: responseText, createdAt: Date.now() }
-            : msg
-        )
-      );
-      setAvatarState('Success');
-      setStatus('Completed');
-      setTimeout(() => {
-        setAvatarState('Normal');
-        setStatus('');
-      }, 3000);
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === thinkingId
-            ? { ...msg, content: `Error: ${errorMsg}`, createdAt: Date.now() }
-            : msg
-        )
-      );
-      setAvatarState('Error');
-      setStatus('Error Encountered');
-      setTimeout(() => {
-        setAvatarState('Normal');
-        setStatus('');
-      }, 4000);
-    } finally {
-      setLoading(false);
-    }
+    setTimeout(() => {
+      setAvatarState('Planning');
+      setStatus('Planning...');
+
+      setTimeout(async () => {
+        setAvatarState('Executing');
+        setStatus('Executing...');
+
+        try {
+          let responseText = 'Command received.';
+          if (typeof window !== 'undefined' && window.kai && window.kai.executeCommand) {
+            responseText = await window.kai.executeCommand(textToSend);
+          } else {
+            const { CommandDispatcher } = await import('../core/CommandDispatcher');
+            const dispatcher = new CommandDispatcher();
+            responseText = await dispatcher.dispatch(textToSend);
+          }
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === thinkingId
+                ? { ...msg, content: responseText, createdAt: Date.now() }
+                : msg
+            )
+          );
+
+          setAvatarState('Speaking');
+          setStatus('Speaking...');
+
+          setTimeout(() => {
+            setAvatarState('Completed');
+            setStatus('Completed');
+            setTimeout(() => {
+              setAvatarState('Idle');
+              setStatus('Ready');
+            }, 3000);
+          }, 2000);
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === thinkingId
+                ? { ...msg, content: `Error: ${errorMsg}`, createdAt: Date.now() }
+                : msg
+            )
+          );
+          setAvatarState('Error');
+          setStatus('Error Encountered');
+          setTimeout(() => {
+            setAvatarState('Idle');
+            setStatus('Ready');
+          }, 4000);
+        } finally {
+          setLoading(false);
+        }
+      }, 500); // 500ms Planning
+    }, 500); // 500ms Listening
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

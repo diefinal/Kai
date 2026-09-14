@@ -12,10 +12,11 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@kai/browser-engine": "workspace:*",
     "@kai/planner": "workspace:*",
     "@kai/shared": "workspace:*",
-    "@kai/windows-engine": "workspace:*",
-    "@kai/vision-engine": "workspace:*"
+    "@kai/vision-engine": "workspace:*",
+    "@kai/windows-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",

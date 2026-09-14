@@ -32,7 +32,7 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'src/renderer/index.html'),
         },
-        external: ['@kai/windows-engine', 'child_process'],
+        external: ['@kai/windows-engine', '@kai/browser-engine', 'child_process'],
       },
     },
   },

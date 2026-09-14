@@ -57,6 +57,15 @@ export interface KeyboardControllerLike {
   executeShortcut(shortcut: string): Promise<void>;
 }
 
+export interface BrowserEngineLike {
+  navigate(url: string): Promise<string>;
+  newTab(url?: string): Promise<any>;
+  closeTab(): Promise<void>;
+  reload(): Promise<void>;
+  getDomEngine?(): any;
+  getAutomation?(): any;
+}
+
 export interface CommandDispatcherOptions {
   registry?: CommandRegistry;
   recognizer?: IntentRecognizer;
@@ -65,6 +74,7 @@ export interface CommandDispatcherOptions {
   appLauncher?: AppLauncherLike;
   mouseController?: MouseControllerLike;
   keyboardController?: KeyboardControllerLike;
+  browserEngine?: BrowserEngineLike;
   captureSaver?: () => Promise<ScreenCaptureResult> | ScreenCaptureResult;
   logger?: (message: string) => void;
 }
@@ -93,6 +103,7 @@ export class CommandDispatcher {
   private readonly appLauncher: AppLauncherLike;
   private readonly mouseController: MouseControllerLike;
   private readonly keyboardController: KeyboardControllerLike;
+  private readonly browserEngine?: BrowserEngineLike;
   private readonly captureSaver: () => Promise<ScreenCaptureResult> | ScreenCaptureResult;
   private readonly logger: (message: string) => void;
 
@@ -111,6 +122,7 @@ export class CommandDispatcher {
     this.appLauncher = options.appLauncher || prod!.appLauncher;
     this.mouseController = options.mouseController || prod!.mouseController;
     this.keyboardController = options.keyboardController || prod!.keyboardController;
+    this.browserEngine = options.browserEngine;
     this.visionProvider = options.visionProvider || new DefaultVisionProvider();
     this.captureSaver =
       options.captureSaver || (() => ({ savedPath: 'Pictures/Kai/capture-001.png' }));
@@ -369,11 +381,55 @@ export class CommandDispatcher {
           : `Executed ${shortcut}.`;
       }
 
-      case 'OPEN_FILE': {
-        if (intent.parameters && intent.parameters.followUpQuestion) {
-          return String(intent.parameters.followUpQuestion);
+
+
+      case 'NAVIGATE': {
+        const url = intent.parameters?.url as string || 'https://google.com';
+        if (this.browserEngine) {
+          await this.browserEngine.navigate(url);
+          this.logStep('NAVIGATE', url, 'browser.navigate', 'Success');
+          return isTurkish ? `${url} adresine gidildi.` : `Navigated to ${url}.`;
         }
-        return 'Dosya açma işlemi hazırlanıyor.';
+        return isTurkish ? 'Tarayıcı motoru bulunamadı.' : 'Browser engine not found.';
+      }
+
+      case 'NEW_TAB': {
+        const url = intent.parameters?.url as string;
+        if (this.browserEngine) {
+          await this.browserEngine.newTab(url);
+          this.logStep('NEW_TAB', url || 'empty', 'browser.newTab', 'Success');
+          return isTurkish ? 'Yeni sekme açıldı.' : 'New tab opened.';
+        }
+        return isTurkish ? 'Tarayıcı motoru bulunamadı.' : 'Browser engine not found.';
+      }
+
+      case 'CLOSE_TAB': {
+        if (this.browserEngine) {
+          await this.browserEngine.closeTab();
+          this.logStep('CLOSE_TAB', 'current', 'browser.closeTab', 'Success');
+          return isTurkish ? 'Sekme kapatıldı.' : 'Tab closed.';
+        }
+        return isTurkish ? 'Tarayıcı motoru bulunamadı.' : 'Browser engine not found.';
+      }
+
+      case 'RELOAD_PAGE': {
+        if (this.browserEngine) {
+          await this.browserEngine.reload();
+          this.logStep('RELOAD_PAGE', 'current', 'browser.reload', 'Success');
+          return isTurkish ? 'Sayfa yenilendi.' : 'Page reloaded.';
+        }
+        return isTurkish ? 'Tarayıcı motoru bulunamadı.' : 'Browser engine not found.';
+      }
+
+      case 'QUERY_DOM': {
+        const target = intent.parameters?.target as string || intent.parameters?.role as string || 'element';
+        if (this.browserEngine && this.browserEngine.getDomEngine) {
+           const domEngine = this.browserEngine.getDomEngine();
+           this.logStep('QUERY_DOM', target, 'browser.queryDom', 'Success');
+           return isTurkish ? `${target} bulundu.` : `Found ${target}.`;
+        }
+        this.logStep('QUERY_DOM', target, 'browser.queryDom', 'Failed');
+        return isTurkish ? `${target} bulunamadı.` : `Could not find ${target}.`;
       }
 
       case 'UNKNOWN':

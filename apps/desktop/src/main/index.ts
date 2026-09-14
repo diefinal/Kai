@@ -6,6 +6,7 @@ import { IpcHandler, ElectronIpcBridgeServer } from './IpcHandler';
 import { WindowStateStore } from './WindowStateStore';
 import { CommandDispatcher } from '../core/CommandDispatcher';
 import { createProductionWindowsDependencies } from '@kai/windows-engine';
+import { BrowserEngine } from '@kai/browser-engine';
 
 export * from './WindowStateStore';
 export * from './WindowManager';
@@ -23,7 +24,11 @@ if (typeof process !== 'undefined' && process.versions && process.versions.elect
     new WindowStateStore(),
     new ElectronWindowFactory(BrowserWindow)
   );
-  const commandDispatcher = new CommandDispatcher(createProductionWindowsDependencies());
+  const windowsDeps = createProductionWindowsDependencies();
+  const commandDispatcher = new CommandDispatcher({
+    ...windowsDeps,
+    browserEngine: new BrowserEngine()
+  });
   const ipcHandler = new IpcHandler(
     new ElectronIpcBridgeServer(ipcMain),
     commandDispatcher

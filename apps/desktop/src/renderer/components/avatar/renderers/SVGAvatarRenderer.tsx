@@ -22,7 +22,12 @@ export const SVGAvatarRenderer: React.FC<RendererProps> = ({ state, theme, size 
   switch(state) {
     case 'Thinking':
     case 'Working':
+    case 'Planning':
       stateColor = '#60A5FA';
+      break;
+    case 'Executing':
+      stateColor = '#FBBF24';
+      glowColor = '#F59E0B';
       break;
     case 'Listening':
     case 'Reading Screen':
@@ -30,6 +35,7 @@ export const SVGAvatarRenderer: React.FC<RendererProps> = ({ state, theme, size 
       glowColor = '#8B5CF6';
       break;
     case 'Success':
+    case 'Completed':
       stateColor = '#34D399';
       glowColor = '#10B981';
       break;
@@ -55,7 +61,7 @@ export const SVGAvatarRenderer: React.FC<RendererProps> = ({ state, theme, size 
       <div className="kai-avatar-ambient-glow" />
       
       {/* Particles for thinking state */}
-      {(state === 'Thinking' || state === 'Working') && (
+      {(['Thinking', 'Working', 'Planning', 'Executing'].includes(state)) && (
          <div className="kai-particles-container">
             <div className="particle p1" />
             <div className="particle p2" />

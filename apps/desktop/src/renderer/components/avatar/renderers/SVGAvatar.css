@@ -65,15 +65,21 @@
 
 /* Thinking State Animations */
 .avatar-state-thinking .avatar-outer-ring,
-.avatar-state-working .avatar-outer-ring {
+.avatar-state-working .avatar-outer-ring,
+.avatar-state-planning .avatar-outer-ring,
+.avatar-state-executing .avatar-outer-ring {
   opacity: 0.8;
   animation: spin 3s linear infinite;
   stroke-dasharray: 40 20;
 }
-.avatar-state-thinking .avatar-eye {
+.avatar-state-thinking .avatar-eye,
+.avatar-state-planning .avatar-eye,
+.avatar-state-executing .avatar-eye {
   animation: think-eye 2s ease-in-out infinite alternate;
 }
-.avatar-state-thinking .kai-avatar-ambient-glow {
+.avatar-state-thinking .kai-avatar-ambient-glow,
+.avatar-state-planning .kai-avatar-ambient-glow,
+.avatar-state-executing .kai-avatar-ambient-glow {
   animation: pulse-glow 2s ease-in-out infinite alternate;
 }
 
@@ -87,17 +93,21 @@
 }
 
 /* Success State Animations */
-.avatar-state-success .avatar-mouth {
+.avatar-state-success .avatar-mouth,
+.avatar-state-completed .avatar-mouth {
   opacity: 0; /* Hide normal mouth, show smile */
 }
-.avatar-state-success .avatar-smile {
+.avatar-state-success .avatar-smile,
+.avatar-state-completed .avatar-smile {
   opacity: 1;
 }
-.avatar-state-success .avatar-pulse-ring {
+.avatar-state-success .avatar-pulse-ring,
+.avatar-state-completed .avatar-pulse-ring {
   opacity: 1;
   animation: success-pulse 1s ease-out;
 }
-.avatar-state-success .avatar-face-group {
+.avatar-state-success .avatar-face-group,
+.avatar-state-completed .avatar-face-group {
   transform: translateY(-5px);
 }
 .avatar-smile {
