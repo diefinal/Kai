@@ -3,20 +3,13 @@ import { ExecutionPlan } from './plans/ExecutionPlan';
 import { PlanStep } from './plans/PlanStep';
 import { PlanValidator } from './plans/PlanValidator';
 import { PlanBuilder } from './plans/PlanBuilder';
-
-export interface ConversationContextLike {
-  currentApplication?(): string | null;
-  currentWindow?(): { id?: string; title: string; processName?: string } | null;
-  currentBrowser?(): { browserName: string; currentUrl?: string } | null;
-  lastVisionResult?(): { ocrLines?: string[]; detectedText?: string; timestamp?: number } | null;
-  lastExecutionPlan?(): unknown | null;
-  lastExecutedAction?(): unknown | null;
-  currentLanguage?(): 'tr' | 'en';
-}
+import { ReasoningEngine } from './reasoning/ReasoningEngine';
+import { ConversationContextLike, Strategy } from './reasoning/ReasoningTypes';
 
 export interface PlannerOptions {
   recognizer?: IntentRecognizer;
   validator?: PlanValidator;
+  reasoningEngine?: ReasoningEngine;
 }
 
 export interface PlanOptions {
@@ -27,10 +20,12 @@ export interface PlanOptions {
 export class Planner {
   private readonly recognizer: IntentRecognizer;
   private readonly validator: PlanValidator;
+  private readonly reasoningEngine: ReasoningEngine;
 
   constructor(options: PlannerOptions = {}) {
     this.recognizer = options.recognizer || new IntentRecognizer();
     this.validator = options.validator || new PlanValidator();
+    this.reasoningEngine = options.reasoningEngine || new ReasoningEngine();
   }
 
   getRecognizer(): IntentRecognizer {
@@ -41,8 +36,27 @@ export class Planner {
     return this.validator;
   }
 
+  getReasoningEngine(): ReasoningEngine {
+    return this.reasoningEngine;
+  }
+
   createBuilder(id?: string): PlanBuilder {
     return new PlanBuilder(id, this.validator);
+  }
+
+  planStrategy(
+    goal: string,
+    contextOrOptions?: ConversationContextLike | PlanOptions
+  ): Strategy {
+    let context: ConversationContextLike | undefined;
+    if (contextOrOptions) {
+      if ('currentApplication' in contextOrOptions || 'lastVisionResult' in contextOrOptions) {
+        context = contextOrOptions as ConversationContextLike;
+      } else {
+        context = (contextOrOptions as PlanOptions).context;
+      }
+    }
+    return this.reasoningEngine.reason(goal, context);
   }
 
   plan(

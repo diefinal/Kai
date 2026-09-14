@@ -8,5 +8,6 @@ export * from './agent';
 export * from './nlu';
 export * from './plans';
 export * from './Planner';
+export * from './reasoning';
 export { PlanBuilder } from './builder';
 export { PlanBuilder as ExecutionPlanBuilder } from './plans';
