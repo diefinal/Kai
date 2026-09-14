@@ -1,0 +1,43 @@
+﻿.kai-official-avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  position: relative;
+  transition: transform 0.3s ease;
+  background-color: #111;
+}
+
+.kai-official-avatar:hover {
+  transform: scale(1.05);
+}
+
+.kai-official-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.kai-official-avatar.kai-avatar-error {
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+}
+
+.kai-official-avatar.kai-avatar-speaking {
+  box-shadow: 0 4px 20px rgba(96, 165, 250, 0.6);
+  animation: kai-speak-pulse 1.5s infinite alternate;
+}
+
+.kai-official-avatar.kai-avatar-listening {
+  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.6);
+}
+
+@keyframes kai-speak-pulse {
+  0% {
+    box-shadow: 0 4px 15px rgba(96, 165, 250, 0.4);
+  }
+  100% {
+    box-shadow: 0 4px 25px rgba(96, 165, 250, 0.8);
+  }
+}

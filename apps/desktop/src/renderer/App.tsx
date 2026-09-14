@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { ChatMessage } from './types';
-import { Avatar, type AvatarState } from './components/Avatar';
+import { KaiAvatar, KaiRuntimeState } from '../../components/KaiAvatar';
 import { StatusPanel } from './components/StatusPanel';
 import { WelcomeCard } from './components/WelcomeCard';
 import { FormattedMessage } from './components/FormattedMessage';
@@ -16,7 +16,7 @@ export const App: React.FC = () => {
   ]);
   const [inputText, setInputText] = useState('');
   const [status, setStatus] = useState<string>('');
-  const [avatarState, setAvatarState] = useState<AvatarState>('Normal');
+  const [avatarState, setAvatarState] = useState<KaiRuntimeState>('idle');
   const [loading, setLoading] = useState(false);
   const messageListRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -153,7 +153,7 @@ export const App: React.FC = () => {
         </div>
 
         <div className="kai-avatar-section">
-          <Avatar state={avatarState} size={150} />
+          <KaiAvatar state={avatarState} size={150} />
           <StatusPanel state={avatarState} customStatus={status} />
         </div>
 

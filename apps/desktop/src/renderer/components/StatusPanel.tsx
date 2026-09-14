@@ -1,8 +1,8 @@
 import React from 'react';
-import type { AvatarState } from './Avatar';
+import type { KaiRuntimeState } from '../../components/KaiAvatar';
 
 export interface StatusPanelProps {
-  state: AvatarState;
+  state: KaiRuntimeState;
   customStatus?: string;
 }
 
