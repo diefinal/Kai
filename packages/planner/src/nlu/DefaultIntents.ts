@@ -35,7 +35,14 @@ export const DEFAULT_INTENTS: IntentDefinition[] = [
       'open app',
       'open application',
       'launch application',
+      'open browser',
+      'launch browser',
       // Turkish
+      'tarayıcıyı aç',
+      'tarayıcı aç',
+      'tarayiciyi ac',
+      'tarayici ac',
+      'web tarayıcısını aç',
       'chrome u aç',
       'chrome aç',
       'chrome u ac',
@@ -66,6 +73,22 @@ export const DEFAULT_INTENTS: IntentDefinition[] = [
       'not defterini aç',
       'uygulama aç',
       'program aç',
+    ],
+  },
+  {
+    name: 'OPEN_FILE',
+    patterns: [
+      // English
+      'open file',
+      'open document',
+      'open proposal',
+      // Turkish
+      'dosyayı aç',
+      'dosya aç',
+      'belgeyi aç',
+      'belge aç',
+      'teklifi aç',
+      'teklifini aç',
     ],
   },
   {

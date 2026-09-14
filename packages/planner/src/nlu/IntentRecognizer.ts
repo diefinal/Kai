@@ -228,6 +228,9 @@ export class IntentRecognizer {
     const lower = text.toLowerCase();
     if (lower.includes('chrome')) return 'chrome';
     if (lower.includes('edge')) return 'edge';
+    if (lower.includes('tarayıcı') || lower.includes('tarayici') || lower.includes('browser')) {
+      return 'chrome';
+    }
     if (
       lower.includes('visual studio code') ||
       lower.includes('vs code') ||

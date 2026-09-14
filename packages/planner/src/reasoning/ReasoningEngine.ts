@@ -64,6 +64,9 @@ export class ReasoningEngine {
         currentWindow: fnCtx.currentWindow?.(),
         currentDomSnapshot: fnCtx.currentDomSnapshot?.(),
         currentLanguage: fnCtx.currentLanguage?.(),
+        longTermMemory: fnCtx.longTermMemory?.(),
+        preferredBrowser: fnCtx.preferredBrowser?.(),
+        activeProject: fnCtx.activeProject?.(),
       };
     }
     return ctx as ReasoningContext;

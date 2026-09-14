@@ -19,11 +19,31 @@ export class ConstraintResolver {
     );
     const currentUrl = context?.currentBrowser?.currentUrl || '';
 
+    const preferredBrowser = context?.preferredBrowser;
+
     for (const candidate of candidates) {
+      // Preference: Apply user preferred browser if candidate opens default chrome
+      if (
+        candidate.action === 'OPEN_APPLICATION' &&
+        candidate.parameters.target === 'chrome' &&
+        preferredBrowser
+      ) {
+        candidate.parameters.target = preferredBrowser;
+      }
+      if (
+        candidate.action === 'NAVIGATE' &&
+        candidate.parameters.browser === 'chrome' &&
+        preferredBrowser
+      ) {
+        candidate.parameters.browser = preferredBrowser;
+      }
+
       // Constraint 1: Skip opening browser if already open
       if (
         candidate.action === 'OPEN_APPLICATION' &&
-        (candidate.parameters.target === 'chrome' || candidate.parameters.target === 'edge') &&
+        (candidate.parameters.target === 'chrome' ||
+          candidate.parameters.target === 'edge' ||
+          candidate.parameters.target === preferredBrowser) &&
         isBrowserOpen
       ) {
         continue;

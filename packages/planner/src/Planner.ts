@@ -203,6 +203,34 @@ export class Planner {
         ocrLines: lastVision.ocrLines,
       };
     }
+
+    // 4. Long-Term Memory preference resolution (e.g. preferred browser)
+    const preferredBrowser = context.preferredBrowser?.();
+    if (preferredBrowser) {
+      if (step.action === 'OPEN_APPLICATION' && step.parameters.target === 'chrome' && !clause.includes('chrome')) {
+        step.parameters.target = preferredBrowser;
+      }
+      if (step.action === 'NAVIGATE' && step.parameters.browser === 'chrome' && !clause.includes('chrome')) {
+        step.parameters.browser = preferredBrowser;
+      }
+    }
+
+    // 5. Long-Term Memory project & file resolution (e.g. "Pizza Bomb teklifini aç")
+    const activeProject = context.activeProject?.();
+    if (activeProject) {
+      if (
+        (step.action === 'OPEN_FOLDER' || step.action === 'OPEN_FILE' || step.action === 'OPEN_APPLICATION') &&
+        lower.includes(activeProject.name.toLowerCase())
+      ) {
+        if (activeProject.lastDocument && lower.includes('teklif')) {
+          step.action = 'OPEN_FILE';
+          step.parameters.path = activeProject.lastDocument;
+        } else if (activeProject.path) {
+          step.action = 'OPEN_FOLDER';
+          step.parameters.path = activeProject.path;
+        }
+      }
+    }
   }
 
   splitClauses(input: string): string[] {

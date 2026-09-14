@@ -23,12 +23,31 @@ export interface ActionCapability {
   requiresBrowser?: boolean;
 }
 
+export interface LongTermMemoryRecordLike {
+  id: string;
+  category: string;
+  title: string;
+  content: string;
+  tags?: string[];
+  importance?: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface LongTermMemoryLike {
+  recall(query: string, options?: { category?: string }): Promise<LongTermMemoryRecordLike | null> | LongTermMemoryRecordLike | null;
+  search?(query: string, options?: { category?: string; limit?: number }): Promise<Array<{ record: LongTermMemoryRecordLike }>> | Array<{ record: LongTermMemoryRecordLike }>;
+  find?(filter?: { category?: string }, limit?: number): Promise<LongTermMemoryRecordLike[]> | LongTermMemoryRecordLike[];
+}
+
 export interface ReasoningContext {
   currentApplication?: string | null;
   currentBrowser?: { browserName: string; currentUrl?: string } | null;
   currentWindow?: { id?: string; title: string; processName?: string } | null;
   currentDomSnapshot?: unknown | null;
   currentLanguage?: 'tr' | 'en';
+  longTermMemory?: LongTermMemoryLike | null;
+  preferredBrowser?: string;
+  activeProject?: { name: string; path?: string; lastDocument?: string };
 }
 
 export interface ConversationContextLike {
@@ -40,6 +59,9 @@ export interface ConversationContextLike {
   lastExecutionPlan?(): unknown | null;
   lastExecutedAction?(): unknown | null;
   currentLanguage?(): 'tr' | 'en';
+  longTermMemory?(): LongTermMemoryLike | null;
+  preferredBrowser?(): string | undefined;
+  activeProject?(): { name: string; path?: string; lastDocument?: string } | undefined;
 }
 
 export interface Strategy {
