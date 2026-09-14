@@ -107,6 +107,16 @@ export class IntentRecognizer {
       if (shortcut) {
         intent.parameters = { ...(intent.parameters || {}), shortcut };
       }
+    } else if (intent.name === 'NAVIGATE') {
+      const url = this.extractUrl(raw);
+      if (url) {
+        intent.parameters = { ...(intent.parameters || {}), url };
+      }
+    } else if (intent.name === 'OPEN_FOLDER') {
+      const folderPath = this.extractFolderPath(raw);
+      if (folderPath) {
+        intent.parameters = { ...(intent.parameters || {}), path: folderPath };
+      }
     } else if (intent.name === 'OPEN_FILE' && (!intent.parameters || !intent.parameters.file)) {
       intent.parameters = {
         ...(intent.parameters || {}),
@@ -116,6 +126,37 @@ export class IntentRecognizer {
             : 'Which file would you like me to open?',
       };
     }
+  }
+
+  private extractUrl(text: string): string | undefined {
+    const urlMatch = text.match(/https?:\/\/[^\s]+/i);
+    if (urlMatch) return urlMatch[0];
+
+    const wwwMatch = text.match(/\bwww\.[^\s]+/i);
+    if (wwwMatch) return `https://${wwwMatch[0]}`;
+
+    const lower = text.toLowerCase();
+    if (lower.includes('github')) return 'https://github.com';
+    if (lower.includes('youtube')) return 'https://youtube.com';
+    if (lower.includes('google')) return 'https://google.com';
+
+    const domainMatch = text.match(/\b([a-zA-Z0-9-]+\.(com|org|net|io|dev|ai|edu|gov|co))\b/i);
+    if (domainMatch) return `https://${domainMatch[1]}`;
+
+    return undefined;
+  }
+
+  private extractFolderPath(text: string): string | undefined {
+    const winPathMatch = text.match(/([a-zA-Z]:\\[^"'\s\n\r]+)/);
+    if (winPathMatch) return winPathMatch[1];
+
+    const quotedMatch = text.match(/["']([a-zA-Z]:\\[^"']+|\/[^"']+)["']/);
+    if (quotedMatch) return quotedMatch[1];
+
+    const unixMatch = text.match(/(\/[\w.-]+(\/[\w.-]+)*)/);
+    if (unixMatch) return unixMatch[1];
+
+    return undefined;
   }
 
   private extractAppTarget(text: string): string | undefined {

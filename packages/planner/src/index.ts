@@ -6,3 +6,7 @@ export * from './context';
 export * from './integration';
 export * from './agent';
 export * from './nlu';
+export * from './plans';
+export * from './Planner';
+export { PlanBuilder } from './builder';
+export { PlanBuilder as ExecutionPlanBuilder } from './plans';

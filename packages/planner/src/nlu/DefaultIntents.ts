@@ -1,4 +1,4 @@
-﻿export interface IntentDefinition {
+export interface IntentDefinition {
   name: string;
   patterns: string[];
   parameterExtractors?: Array<{
@@ -382,6 +382,50 @@ export const DEFAULT_INTENTS: IntentDefinition[] = [
       'yardim',
       'neler yapabilirsin',
       'komutlar',
+    ],
+  },
+  {
+    name: 'NAVIGATE',
+    patterns: [
+      // English
+      'go to github',
+      'go to github.com',
+      'navigate to github',
+      'open github',
+      'open website',
+      'go to url',
+      'navigate to url',
+      'go to youtube',
+      'go to google',
+      // Turkish
+      'github a git',
+      'github\'a git',
+      'githuba git',
+      'youtube a git',
+      'youtube\'a git',
+      'youtubeya git',
+      'google a git',
+      'google\'a git',
+      'siteye git',
+      'web sitesine git',
+      'sayfaya git',
+    ],
+  },
+  {
+    name: 'OPEN_FOLDER',
+    patterns: [
+      // English
+      'open folder',
+      'open directory',
+      'open path',
+      // Turkish
+      'klasörü aç',
+      'klasorunu ac',
+      'klasörü ac',
+      'klasör aç',
+      'dizini aç',
+      'klasörünü aç',
+      'klasorunu aç',
     ],
   },
 ];
