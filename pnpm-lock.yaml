@@ -200,6 +200,9 @@ importers:
       '@kai/shared':
         specifier: workspace:*
         version: link:../shared
+      playwright-core:
+        specifier: ^1.63.0
+        version: 1.63.0
 
   packages/coding-engine:
     dependencies:

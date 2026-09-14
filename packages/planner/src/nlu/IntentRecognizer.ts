@@ -117,6 +117,16 @@ export class IntentRecognizer {
       if (folderPath) {
         intent.parameters = { ...(intent.parameters || {}), path: folderPath };
       }
+    } else if (intent.name === 'NEW_TAB') {
+      const url = this.extractUrl(raw);
+      if (url) {
+        intent.parameters = { ...(intent.parameters || {}), url };
+      }
+    } else if (intent.name === 'SWITCH_TAB') {
+      const match = /(\d+)/.exec(raw);
+      if (match) {
+        intent.parameters = { ...(intent.parameters || {}), tabIndex: parseInt(match[1], 10) };
+      }
     } else if (intent.name === 'OPEN_FILE' && (!intent.parameters || !intent.parameters.file)) {
       intent.parameters = {
         ...(intent.parameters || {}),

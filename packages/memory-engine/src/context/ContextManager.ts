@@ -38,8 +38,12 @@ export class ContextManager {
 
     const normAction = action.toUpperCase();
 
-    if (normAction === 'OPEN_APPLICATION') {
-      const target = (parameters.target as string) || (parameters.appName as string) || '';
+    if (normAction === 'OPEN_APPLICATION' || normAction === 'OPEN_BROWSER') {
+      const target =
+        (parameters.target as string) ||
+        (parameters.browser as string) ||
+        (parameters.appName as string) ||
+        'chrome';
       const normTarget = target.toLowerCase();
       this.context.setCurrentApplication(normTarget);
 
@@ -69,13 +73,66 @@ export class ContextManager {
           ? this.context.currentApplication()!
           : 'chrome');
 
+      const existingTabs = this.context.currentBrowser()?.tabs || [];
+      const currentTab = existingTabs.length > 0 ? existingTabs[0] : { id: 'tab-1', url };
+      currentTab.url = url;
+
       this.context.setCurrentBrowser({
         browserName,
         currentUrl: url,
-        activeTabId: 'tab-1',
-        tabs: [{ id: 'tab-1', url }],
+        activeTabId: currentTab.id,
+        tabs: existingTabs.length > 0 ? existingTabs : [currentTab],
       });
       this.context.setCurrentApplication(browserName);
+    } else if (normAction === 'NEW_TAB') {
+      const browser = this.context.currentBrowser() || { browserName: 'chrome', tabs: [] };
+      const tabId = (output as any)?.tabId || `tab-${(browser.tabs?.length || 0) + 1}`;
+      const url = (parameters.url as string) || (output as any)?.url || 'about:blank';
+      const updatedTabs = [...(browser.tabs || []), { id: tabId, url }];
+      this.context.setCurrentBrowser({
+        ...browser,
+        activeTabId: tabId,
+        currentUrl: url,
+        tabs: updatedTabs,
+      });
+    } else if (normAction === 'CLOSE_TAB') {
+      const browser = this.context.currentBrowser();
+      if (browser && browser.tabs) {
+        const tabId = (parameters.tabId as string) || browser.activeTabId;
+        const remainingTabs = browser.tabs.filter((t) => t.id !== tabId);
+        const nextActive =
+          remainingTabs.length > 0 ? remainingTabs[remainingTabs.length - 1] : undefined;
+        this.context.setCurrentBrowser({
+          ...browser,
+          activeTabId: nextActive?.id,
+          currentUrl: nextActive?.url,
+          tabs: remainingTabs,
+        });
+      }
+    } else if (normAction === 'SWITCH_TAB') {
+      const browser = this.context.currentBrowser();
+      if (browser) {
+        const tabId = (parameters.tabId as string) || (output as any)?.tabId;
+        const targetTab = browser.tabs?.find((t) => t.id === tabId);
+        this.context.setCurrentBrowser({
+          ...browser,
+          activeTabId: tabId,
+          currentUrl: targetTab?.url || browser.currentUrl,
+        });
+      }
+    } else if (
+      normAction === 'BACK' ||
+      normAction === 'FORWARD' ||
+      normAction === 'GET_CURRENT_URL'
+    ) {
+      const browser = this.context.currentBrowser();
+      const url = (output as any)?.url;
+      if (browser && url) {
+        this.context.setCurrentBrowser({
+          ...browser,
+          currentUrl: url,
+        });
+      }
     } else if (normAction === 'READ_SCREEN' || normAction === 'CAPTURE_SCREEN') {
       const ocrLines = Array.isArray(output) ? (output as string[]) : [];
       this.context.setLastVisionResult({

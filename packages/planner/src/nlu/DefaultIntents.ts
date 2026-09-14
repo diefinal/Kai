@@ -428,4 +428,114 @@ export const DEFAULT_INTENTS: IntentDefinition[] = [
       'klasorunu aç',
     ],
   },
+  {
+    name: 'NEW_TAB',
+    patterns: [
+      // English
+      'new tab',
+      'open new tab',
+      'create tab',
+      'add tab',
+      // Turkish
+      'yeni sekme aç',
+      'yeni sekme',
+      'sekme aç',
+      'yeni sekme ac',
+      'sekme ac',
+    ],
+  },
+  {
+    name: 'CLOSE_TAB',
+    patterns: [
+      // English
+      'close tab',
+      'close current tab',
+      'close the tab',
+      // Turkish
+      'sekmeyi kapat',
+      'sekme kapat',
+      'bu sekmeyi kapat',
+      'sekmeyi kapa',
+    ],
+  },
+  {
+    name: 'SWITCH_TAB',
+    patterns: [
+      // English
+      'switch tab',
+      'switch to tab',
+      'change tab',
+      'go to tab',
+      // Turkish
+      'sekmeye geç',
+      'sekme değiştir',
+      'sekmeyi değiştir',
+      'sekmeye gec',
+    ],
+  },
+  {
+    name: 'RELOAD_PAGE',
+    patterns: [
+      // English
+      'reload page',
+      'refresh page',
+      'reload this page',
+      'reload',
+      'refresh',
+      // Turkish
+      'bu sayfayı yenile',
+      'sayfayı yenile',
+      'yenile',
+      'sayfayi yenile',
+      'bu sayfayi yenile',
+      'sayfayı tazele',
+    ],
+  },
+  {
+    name: 'BACK',
+    patterns: [
+      // English
+      'go back',
+      'back',
+      'previous page',
+      'return to previous page',
+      // Turkish
+      'önceki sayfaya dön',
+      'onceki sayfaya don',
+      'geri git',
+      'geri dön',
+      'geri don',
+      'önceki sayfa',
+    ],
+  },
+  {
+    name: 'FORWARD',
+    patterns: [
+      // English
+      'go forward',
+      'forward',
+      'next page',
+      // Turkish
+      'sonraki sayfaya git',
+      'ileri git',
+      'ileri dön',
+      'sonraki sayfa',
+    ],
+  },
+  {
+    name: 'GET_CURRENT_URL',
+    patterns: [
+      // English
+      'current url',
+      'get url',
+      'what is the url',
+      'show url',
+      // Turkish
+      'geçerli url',
+      'hangi sitedeyim',
+      'hangi sayfadayım',
+      'url nedir',
+      'gecerli url',
+    ],
+  },
 ];
