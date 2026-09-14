@@ -4,6 +4,16 @@ import { PlanStep } from './plans/PlanStep';
 import { PlanValidator } from './plans/PlanValidator';
 import { PlanBuilder } from './plans/PlanBuilder';
 
+export interface ConversationContextLike {
+  currentApplication?(): string | null;
+  currentWindow?(): { id?: string; title: string; processName?: string } | null;
+  currentBrowser?(): { browserName: string; currentUrl?: string } | null;
+  lastVisionResult?(): { ocrLines?: string[]; detectedText?: string; timestamp?: number } | null;
+  lastExecutionPlan?(): unknown | null;
+  lastExecutedAction?(): unknown | null;
+  currentLanguage?(): 'tr' | 'en';
+}
+
 export interface PlannerOptions {
   recognizer?: IntentRecognizer;
   validator?: PlanValidator;
@@ -11,6 +21,7 @@ export interface PlannerOptions {
 
 export interface PlanOptions {
   id?: string;
+  context?: ConversationContextLike;
 }
 
 export class Planner {
@@ -34,13 +45,31 @@ export class Planner {
     return new PlanBuilder(id, this.validator);
   }
 
-  plan(input: string, options?: PlanOptions): ExecutionPlan {
+  plan(
+    input: string,
+    contextOrOptions?: ConversationContextLike | PlanOptions
+  ): ExecutionPlan {
     const raw = input.trim();
-    const planId = options?.id || `plan-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+    let planId: string | undefined;
+    let context: ConversationContextLike | undefined;
+
+    if (contextOrOptions) {
+      if ('currentApplication' in contextOrOptions || 'lastVisionResult' in contextOrOptions) {
+        context = contextOrOptions as ConversationContextLike;
+      } else {
+        const opts = contextOrOptions as PlanOptions;
+        planId = opts.id;
+        context = opts.context;
+      }
+    }
+
+    const resolvedPlanId =
+      planId || `plan-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
     if (!raw) {
       const emptyPlan: ExecutionPlan = {
-        id: planId,
+        id: resolvedPlanId,
         steps: [],
       };
       this.validator.assertValid(emptyPlan);
@@ -64,16 +93,78 @@ export class Planner {
         dependsOn: prevStep ? [prevStep.id] : [],
       };
 
+      this.enrichStepWithContext(step, clause, context);
+
       steps.push(step);
     }
 
     const plan: ExecutionPlan = {
-      id: planId,
+      id: resolvedPlanId,
       steps,
     };
 
     this.validator.assertValid(plan);
     return plan;
+  }
+
+  private enrichStepWithContext(
+    step: PlanStep,
+    clause: string,
+    context?: ConversationContextLike
+  ): void {
+    if (!context) return;
+
+    const lower = clause.toLowerCase();
+
+    // 1. Window control reference resolution ("bu pencereyi büyüt", "pencereyi kapat")
+    if (
+      step.action === 'MAXIMIZE_WINDOW' ||
+      step.action === 'MINIMIZE_WINDOW' ||
+      step.action === 'CLOSE_WINDOW' ||
+      step.action === 'BRING_TO_FRONT'
+    ) {
+      if (!step.parameters.target) {
+        const app =
+          context.currentApplication?.() ||
+          context.currentWindow?.()?.processName ||
+          context.currentWindow?.()?.title;
+        if (app) {
+          step.parameters.target = app;
+        }
+      }
+    }
+
+    // 2. Navigation reference resolution (GitHub'a git -> Chrome session)
+    if (step.action === 'NAVIGATE') {
+      if (!step.parameters.browser) {
+        const browser =
+          context.currentBrowser?.()?.browserName ||
+          (context.currentApplication?.() === 'chrome' ||
+          context.currentApplication?.() === 'edge'
+            ? context.currentApplication?.()
+            : undefined);
+        if (browser) {
+          step.parameters.browser = browser;
+        }
+      }
+    }
+
+    // 3. Vision context reuse ("Burada hata var mı?", "Ne görüyorsun?", "Metni açıkla")
+    const lastVision = context.lastVisionResult?.();
+    const isVisionQuery =
+      /\b(burada|ekranda|metinde|ne\s+görüyorsun|ne\s+var|hata\s+var\s+mı|açıkla|here|on\s+the\s+screen|in\s+the\s+text|what\s+do\s+you\s+see|is\s+there\s+an\s+error)\b/i.test(
+        lower
+      );
+
+    if (lastVision && (isVisionQuery || step.action === 'READ_SCREEN')) {
+      step.action = 'ANALYZE_SCREEN_TEXT';
+      step.parameters = {
+        ...step.parameters,
+        reuseVision: true,
+        detectedText: lastVision.detectedText,
+        ocrLines: lastVision.ocrLines,
+      };
+    }
   }
 
   splitClauses(input: string): string[] {

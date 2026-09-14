@@ -12,6 +12,15 @@ export class ExecutionContext {
   constructor(public plan: ExecutionPlan) {}
 }
 
+export interface ContextManagerLike {
+  recordAction(
+    action: string,
+    parameters?: Record<string, unknown>,
+    success?: boolean,
+    output?: unknown
+  ): void;
+}
+
 export class ExecutionManager {
   private contexts = new Map<string, ExecutionContext>();
   private dispatcher: EventDispatcher;
@@ -20,7 +29,8 @@ export class ExecutionManager {
   constructor(
     private eventBus: IEventBus,
     private checkpointStore: ICheckpointStore,
-    private executorFn: (step: any, ctx: any) => Promise<StepResult>
+    private executorFn: (step: any, ctx: any) => Promise<StepResult>,
+    private contextManager?: ContextManagerLike
   ) {
     this.dispatcher = new EventDispatcher(eventBus);
   }
@@ -128,6 +138,11 @@ export class ExecutionManager {
         if (result.success) {
           ctx.currentStepIndex++;
           this.dispatcher.dispatch(EventTypes.StepCompleted, { id: executionId, stepId: step.id, result: result.output });
+          if (this.contextManager) {
+            const action = step.action || step.toolName;
+            const params = step.parameters || step.payload || {};
+            this.contextManager.recordAction(action, params, true, result.output);
+          }
           await this.checkpointStore.save(ctx.plan.id, ctx);
           this.dispatcher.dispatch(EventTypes.Checkpoint, { id: ctx.plan.id, state: ctx.status });
         } else {
@@ -164,9 +179,10 @@ export class ExecutionEngine implements IExecutionEngine {
   constructor(
     eventBus: IEventBus,
     checkpointStore: ICheckpointStore,
-    executorFn: (step: any, ctx: any) => Promise<StepResult>
+    executorFn: (step: any, ctx: any) => Promise<StepResult>,
+    contextManager?: ContextManagerLike
   ) {
-    this.manager = new ExecutionManager(eventBus, checkpointStore, executorFn);
+    this.manager = new ExecutionManager(eventBus, checkpointStore, executorFn, contextManager);
   }
 
   async submit(plan: ExecutionPlan): Promise<string> {
