@@ -109,6 +109,9 @@ importers:
 
   .:
     dependencies:
+      '@kai/avatar-engine':
+        specifier: workspace:*
+        version: link:packages/avatar-engine
       '@kai/cognitive-engine':
         specifier: workspace:*
         version: link:packages/cognitive-engine
@@ -161,6 +164,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@kai/avatar-engine':
+        specifier: workspace:*
+        version: link:../../packages/avatar-engine
       '@kai/browser-engine':
         specifier: workspace:*
         version: link:../../packages/browser-engine
@@ -222,6 +228,15 @@ importers:
       '@kai/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+
+  packages/avatar-engine:
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^0.30.0
+        version: 0.30.1(lightningcss@1.33.0)(playwright@1.63.0)(supports-color@7.2.0)
 
   packages/browser-engine:
     dependencies:

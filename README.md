@@ -167,4 +167,13 @@ tests/
 
 ```
 
-See **docs/** for architecture.
+See **docs/** for architecture.# Kai Design System
+
+Kai has ONE official, permanent visual and behavioral identity.
+
+Kai is an autonomous AI desktop companion with a frozen aesthetic and persona. No developer, contributor, or AI coding agent is permitted to redesign Kai, replace character assets, or introduce arbitrary avatars.
+
+For complete, authoritative guidelines, see:
+- [Kai Identity Specification](docs/KAI_IDENTITY.md)
+
+Any visual or behavioral decision must strictly adhere to docs/KAI_IDENTITY.md. If any proposed feature or convenience conflicts with the identity specification, the specification wins.

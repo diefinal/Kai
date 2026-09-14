@@ -1,6 +1,17 @@
-﻿import React, { useRef, useLayoutEffect } from 'react';
+﻿/**
+ * AvatarModel Component
+ *
+ * Mandatory Reference: /docs/KAI_IDENTITY.md
+ * Kai Identity is frozen and locked.
+ * Character loading must always reference OfficialKai through CharacterRegistry.
+ * If an avatar cannot be loaded, display 'Official Kai asset missing.'
+ * Never render another model, robot, placeholder, or fallback character.
+ */
+
+import React, { useRef, useLayoutEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 import { useGLTF, useAnimations, Text, Float } from '@react-three/drei';
+import { CharacterRegistry } from '@kai/avatar-engine';
 import type { KaiAvatar3DState } from './KaiAvatar3DState';
 import * as THREE from 'three';
 
@@ -9,29 +20,20 @@ interface AvatarModelProps {
   state: KaiAvatar3DState;
 }
 
-export const AvatarPlaceholder: React.FC = () => {
+export const OfficialKaiAssetMissing: React.FC = () => {
   return (
-    <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
+    <Float speed={1.5} rotationIntensity={0.1} floatIntensity={0.3}>
       <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[2, 1, 0.1]} />
-        <meshStandardMaterial color="#1e293b" opacity={0.8} transparent />
+        <boxGeometry args={[2.2, 0.8, 0.08]} />
+        <meshStandardMaterial color="#0f172a" opacity={0.85} transparent />
         <Text
-          position={[0, 0.2, 0.06]}
-          fontSize={0.2}
-          color="#60a5fa"
+          position={[0, 0, 0.05]}
+          fontSize={0.14}
+          color="#38bdf8"
           anchorX="center"
           anchorY="middle"
         >
-          [ 3D Preview ]
-        </Text>
-        <Text
-          position={[0, -0.2, 0.06]}
-          fontSize={0.15}
-          color="#94a3b8"
-          anchorX="center"
-          anchorY="middle"
-        >
-          Official Kai Character Not Installed
+          Official Kai asset missing.
         </Text>
       </mesh>
     </Float>
@@ -82,7 +84,6 @@ export const LoadedModelContent: React.FC<{ url: string; state: KaiAvatar3DState
   const { actions } = useAnimations(animations, scene);
 
   useLayoutEffect(() => {
-    // Check if matching animation state exists
     const currentAction = actions[state] || actions['idle'] || Object.values(actions)[0];
     if (currentAction) {
       currentAction.reset().fadeIn(0.2).play();
@@ -96,9 +97,16 @@ export const LoadedModelContent: React.FC<{ url: string; state: KaiAvatar3DState
 };
 
 export const AvatarModel: React.FC<AvatarModelProps> = ({ modelUrl, state }) => {
-  if (!modelUrl) {
-    return <AvatarPlaceholder />;
+  // Always resolve model path via CharacterRegistry
+  const targetUrl = modelUrl || CharacterRegistry.getModelPath();
+
+  if (!targetUrl || !CharacterRegistry.validateAssetPath(targetUrl)) {
+    return <OfficialKaiAssetMissing />;
   }
 
-  return <LoadedModelContent url={modelUrl} state={state} />;
+  return (
+    <React.Suspense fallback={<OfficialKaiAssetMissing />}>
+      <LoadedModelContent url={targetUrl} state={state} />
+    </React.Suspense>
+  );
 };

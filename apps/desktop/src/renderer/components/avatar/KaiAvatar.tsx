@@ -1,3 +1,12 @@
+﻿/**
+ * KaiAvatar Component (2D Sprite View)
+ *
+ * Mandatory Reference: /docs/KAI_IDENTITY.md
+ * Kai Identity is frozen and locked.
+ * All avatar renders must display the official Kai character.
+ * Redesign, replacement, fallback characters, or arbitrary generated avatars are strictly forbidden.
+ */
+
 import React, { useMemo } from 'react';
 import './KaiAvatar.css';
 import type { KaiAvatarState } from './KaiAvatarState';
@@ -29,13 +38,20 @@ export const KaiAvatar: React.FC<KaiAvatarProps> = ({ state, size = 160 }) => {
     }
   }, [state]);
 
+  if (!imgSrc) {
+    return (
+      <div className="kai-avatar-missing" style={{ width: size, height: size, color: '#38bdf8', textAlign: 'center' }}>
+        Official Kai asset missing.
+      </div>
+    );
+  }
+
   return (
-    <div className={`kai-avatar-wrapper state-${state}`} style={{ width: size, height: size }}>
+    <div className={kai-avatar-wrapper state-} style={{ width: size, height: size }}>
       <div className="kai-avatar-glow-layer"></div>
       <div className="kai-avatar-image-container">
-        <img src={imgSrc} alt={`Kai (${state})`} className="kai-avatar-img" />
+        <img src={imgSrc} alt={Official Kai ()} className="kai-avatar-img" />
       </div>
-      {/* Overlay particles/effects */}
       <div className="kai-avatar-effects"></div>
     </div>
   );

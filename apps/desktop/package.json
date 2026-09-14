@@ -12,6 +12,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@kai/avatar-engine": "workspace:*",
     "@kai/browser-engine": "workspace:*",
     "@kai/planner": "workspace:*",
     "@kai/shared": "workspace:*",
