@@ -2,7 +2,12 @@ import { IExecutionEngine, IEventBus, ICheckpointStore } from '../interfaces';
 import { EventDispatcher, EventTypes } from '../events';
 import { ExecutionStatus, ExecutionStateMachine } from '../state';
 import { ExecutionPlan, StepResult } from '../workflow';
-import { TaskQueue, RetryPolicy } from '../queue';
+import { RetryPolicy } from '../queue';
+import {
+  VerificationEngine,
+  VerificationContext,
+  RetryPolicyType,
+} from '../verification';
 
 export class ExecutionContext {
   public status: ExecutionStatus = ExecutionStatus.CREATED;
@@ -19,6 +24,11 @@ export interface ContextManagerLike {
     success?: boolean,
     output?: unknown
   ): void;
+  recordVerification?(
+    verification: unknown,
+    failureReason?: string,
+    retryCount?: number
+  ): void;
 }
 
 export class ExecutionManager {
@@ -30,7 +40,8 @@ export class ExecutionManager {
     private eventBus: IEventBus,
     private checkpointStore: ICheckpointStore,
     private executorFn: (step: any, ctx: any) => Promise<StepResult>,
-    private contextManager?: ContextManagerLike
+    private contextManager?: ContextManagerLike,
+    private verificationEngine: VerificationEngine = new VerificationEngine()
   ) {
     this.dispatcher = new EventDispatcher(eventBus);
   }
@@ -114,37 +125,139 @@ export class ExecutionManager {
       const step = ctx.plan.steps[ctx.currentStepIndex];
       
       if (step.requiresPermission) {
-         if (ctx.status !== ExecutionStatus.WAITING_PERMISSION) {
-           // Fresh permission request — transition and emit event
-           await this.changeState(ctx, ExecutionStatus.WAITING_PERMISSION);
-           this.dispatcher.dispatch(EventTypes.PermissionRequested, { id: executionId, stepId: step.id });
-         }
+          if (ctx.status !== ExecutionStatus.WAITING_PERMISSION) {
+            // Fresh permission request — transition and emit event
+            await this.changeState(ctx, ExecutionStatus.WAITING_PERMISSION);
+            const permissionPromise = new Promise<boolean>((resolve) => {
+              this.permissionResolvers.set(executionId, resolve);
+            });
+            this.dispatcher.dispatch(EventTypes.PermissionRequested, { id: executionId, stepId: step.id });
+            const granted = await permissionPromise;
+            if (!granted) {
+              return; // Permission denied — failure events already emitted
+            }
+          } else {
+            // Wait for external grant/deny (recovery case)
+            const granted = await new Promise<boolean>((resolve) => {
+              this.permissionResolvers.set(executionId, resolve);
+            });
+            if (!granted) {
+              return; // Permission denied — failure events already emitted
+            }
+          }
+          // Permission granted — status already set to EXECUTING by providePermission
 
-         // Wait for external grant/deny (covers both fresh request and recovery)
-         const granted = await new Promise<boolean>((resolve) => {
-           this.permissionResolvers.set(executionId, resolve);
-         });
-
-         if (!granted) {
-           return; // Permission denied — failure events already emitted
-         }
-         // Permission granted — status already set to EXECUTING by providePermission
       }
 
       this.dispatcher.dispatch(EventTypes.StepStarted, { id: executionId, stepId: step.id });
       
       try {
         const result = await this.executorFn(step, ctx.plan.context);
+        const action = step.action || step.toolName;
+        const params = step.parameters || step.payload || {};
+
         if (result.success) {
-          ctx.currentStepIndex++;
-          this.dispatcher.dispatch(EventTypes.StepCompleted, { id: executionId, stepId: step.id, result: result.output });
-          if (this.contextManager) {
-            const action = step.action || step.toolName;
-            const params = step.parameters || step.payload || {};
-            this.contextManager.recordAction(action, params, true, result.output);
+          // Verification Flow
+          this.dispatcher.dispatch(EventTypes.VerificationStarted, {
+            id: executionId,
+            stepId: step.id,
+            action,
+          });
+
+          const vContext: VerificationContext = {
+            action,
+            parameters: params,
+            output: result.output,
+            expectedState: step.expectedState,
+            browserState: ctx.plan.context?.browserState || (step.context?.browserState),
+            desktopState: ctx.plan.context?.desktopState || (step.context?.desktopState),
+            visionState: ctx.plan.context?.visionState || (step.context?.visionState),
+            customCheck: step.customCheck || step.verify,
+          };
+
+          const vResult = await this.verificationEngine.verify(vContext, step.timeout);
+
+          if (vResult.success) {
+            this.dispatcher.dispatch(EventTypes.VerificationCompleted, {
+              id: executionId,
+              stepId: step.id,
+              result: vResult,
+            });
+
+            ctx.currentStepIndex++;
+            this.dispatcher.dispatch(EventTypes.StepCompleted, { id: executionId, stepId: step.id, result: result.output });
+            if (this.contextManager) {
+              this.contextManager.recordAction(action, params, true, result.output);
+              this.contextManager.recordVerification?.(vResult);
+            }
+            await this.checkpointStore.save(ctx.plan.id, ctx);
+            this.dispatcher.dispatch(EventTypes.Checkpoint, { id: ctx.plan.id, state: ctx.status });
+          } else {
+            // Verification Failed
+            this.dispatcher.dispatch(EventTypes.VerificationFailed, {
+              id: executionId,
+              stepId: step.id,
+              result: vResult,
+              reason: vResult.reason,
+            });
+
+            const policy: RetryPolicyType = step.retryPolicy || 'retry_once';
+            const retries = ctx.stepRetries[step.id] || 0;
+            const evaluation = this.verificationEngine.evaluatePolicy(vResult, retries, policy);
+
+            if (this.contextManager) {
+              this.contextManager.recordAction(action, params, false, result.output);
+              this.contextManager.recordVerification?.(vResult, vResult.reason, retries);
+            }
+
+            if (evaluation.shouldRetry) {
+              ctx.stepRetries[step.id] = retries + 1;
+              await this.changeState(ctx, ExecutionStatus.RETRYING);
+              await this.changeState(ctx, ExecutionStatus.EXECUTING);
+              continue;
+            }
+
+            if (evaluation.shouldAskUser) {
+              await this.changeState(ctx, ExecutionStatus.WAITING_PERMISSION);
+              const permissionPromise = new Promise<boolean>((resolve) => {
+                this.permissionResolvers.set(executionId, resolve);
+              });
+              this.dispatcher.dispatch(EventTypes.PermissionRequested, {
+                id: executionId,
+                stepId: step.id,
+                reason: vResult.reason,
+              });
+              const granted = await permissionPromise;
+              if (granted) {
+                ctx.currentStepIndex++;
+                continue;
+              }
+              return;
+            }
+
+
+            if (evaluation.shouldReplan) {
+              this.dispatcher.dispatch(EventTypes.ReplanRequested, {
+                id: executionId,
+                stepId: step.id,
+                reason: vResult.reason,
+              });
+              await this.changeState(ctx, ExecutionStatus.FAILED);
+              this.dispatcher.dispatch(EventTypes.ExecutionFailed, {
+                id: executionId,
+                error: `Verification failed: ${vResult.reason}. Replan requested.`,
+              });
+              return;
+            }
+
+            // Abort
+            await this.changeState(ctx, ExecutionStatus.FAILED);
+            this.dispatcher.dispatch(EventTypes.ExecutionFailed, {
+              id: executionId,
+              error: `Verification failed: ${vResult.reason}`,
+            });
+            return;
           }
-          await this.checkpointStore.save(ctx.plan.id, ctx);
-          this.dispatcher.dispatch(EventTypes.Checkpoint, { id: ctx.plan.id, state: ctx.status });
         } else {
           // Handle retry
           const retries = ctx.stepRetries[step.id] || 0;
@@ -180,9 +293,16 @@ export class ExecutionEngine implements IExecutionEngine {
     eventBus: IEventBus,
     checkpointStore: ICheckpointStore,
     executorFn: (step: any, ctx: any) => Promise<StepResult>,
-    contextManager?: ContextManagerLike
+    contextManager?: ContextManagerLike,
+    verificationEngine?: VerificationEngine
   ) {
-    this.manager = new ExecutionManager(eventBus, checkpointStore, executorFn, contextManager);
+    this.manager = new ExecutionManager(
+      eventBus,
+      checkpointStore,
+      executorFn,
+      contextManager,
+      verificationEngine
+    );
   }
 
   async submit(plan: ExecutionPlan): Promise<string> {

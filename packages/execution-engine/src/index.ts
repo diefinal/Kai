@@ -4,3 +4,4 @@ export * from './state';
 export * from './workflow';
 export * from './queue';
 export * from './core';
+export * from './verification';

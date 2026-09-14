@@ -59,6 +59,30 @@ export class Planner {
     return this.reasoningEngine.reason(goal, context);
   }
 
+  replanOnFailure(
+    failedPlan: ExecutionPlan,
+    reason: string | Error,
+    contextOrOptions?: ConversationContextLike | PlanOptions
+  ): ExecutionPlan {
+    let context: ConversationContextLike | undefined;
+    if (contextOrOptions) {
+      if ('currentApplication' in contextOrOptions || 'lastVisionResult' in contextOrOptions) {
+        context = contextOrOptions as ConversationContextLike;
+      } else {
+        context = (contextOrOptions as PlanOptions).context;
+      }
+    }
+    const recoveryStrategy = this.reasoningEngine.generateRecoveryStrategy(
+      failedPlan,
+      reason,
+      context
+    );
+    const plan = recoveryStrategy.toUnifiedPlan();
+    this.validator.assertValid(plan);
+    return plan;
+  }
+
+
   plan(
     input: string,
     contextOrOptions?: ConversationContextLike | PlanOptions

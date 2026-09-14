@@ -5,6 +5,7 @@ import {
   VisionContext,
   DomSnapshotContext,
   DomElementContext,
+  VerificationContextSnapshot,
 } from './ContextTypes';
 
 export class ContextManager {
@@ -28,15 +29,23 @@ export class ContextManager {
     success = true,
     output?: unknown
   ): void {
-    this.context.setLastExecutedAction({
+    const actionCtx = {
       action,
       parameters,
       timestamp: Date.now(),
       success,
       output,
-    });
+    };
+    this.context.setLastExecutedAction(actionCtx);
 
-    if (!success) return;
+    if (success) {
+      this.context.setLastSuccessfulAction(actionCtx);
+      this.context.setFailureReason(null);
+    } else {
+      this.context.setFailureReason(`Action ${action} failed`);
+      return;
+    }
+
 
     const normAction = action.toUpperCase();
 
@@ -227,4 +236,39 @@ export class ContextManager {
   recordVision(vision: VisionContext): void {
     this.context.setLastVisionResult(vision);
   }
+
+  recordVerification(
+    verification: unknown,
+    failureReason?: string,
+    retryCount?: number
+  ): void {
+    if (!verification || typeof verification !== 'object') return;
+    const v = verification as { success?: boolean; confidence?: number; reason?: string };
+    const success = !!v.success;
+    const snapshot: VerificationContextSnapshot = {
+      success,
+      confidence: typeof v.confidence === 'number' ? v.confidence : 1.0,
+      reason: v.reason,
+      timestamp: Date.now(),
+    };
+    this.context.setLastVerification(snapshot);
+
+    if (failureReason !== undefined) {
+      this.context.setFailureReason(failureReason);
+    } else if (!success && v.reason) {
+      this.context.setFailureReason(v.reason);
+    }
+
+    if (typeof retryCount === 'number') {
+      this.context.setRetryCount(retryCount);
+    }
+  }
+
+  recordFailure(reason: string, retryCount?: number): void {
+    this.context.setFailureReason(reason);
+    if (typeof retryCount === 'number') {
+      this.context.setRetryCount(retryCount);
+    }
+  }
 }
+

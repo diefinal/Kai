@@ -11,7 +11,11 @@ export enum EventTypes {
   PermissionRequested = 'PermissionRequested',
   PermissionGranted = 'PermissionGranted',
   PermissionDenied = 'PermissionDenied',
-  Checkpoint = 'Checkpoint'
+  Checkpoint = 'Checkpoint',
+  VerificationStarted = 'VerificationStarted',
+  VerificationCompleted = 'VerificationCompleted',
+  VerificationFailed = 'VerificationFailed',
+  ReplanRequested = 'ReplanRequested',
 }
 
 export class EventDispatcher {

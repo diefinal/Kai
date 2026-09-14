@@ -81,6 +81,13 @@ export interface DomQueryContext {
   matchedCount: number;
 }
 
+export interface VerificationContextSnapshot {
+  success: boolean;
+  confidence: number;
+  reason?: string;
+  timestamp: number;
+}
+
 export interface ConversationContextSnapshot {
   currentApplication: string | null;
   currentWindow: ActiveWindowContext | null;
@@ -91,6 +98,10 @@ export interface ConversationContextSnapshot {
   lastVisionResult: VisionContext | null;
   lastExecutionPlan: ExecutionPlanContext | null;
   lastExecutedAction: ActionContext | null;
+  lastSuccessfulAction: ActionContext | null;
+  lastVerification: VerificationContextSnapshot | null;
+  failureReason: string | null;
+  retryCount: number;
   currentLanguage: 'tr' | 'en';
   updatedAt: number;
 }
@@ -105,6 +116,11 @@ export interface IConversationContext {
   lastVisionResult(): VisionContext | null;
   lastExecutionPlan(): ExecutionPlanContext | null;
   lastExecutedAction(): ActionContext | null;
+  lastSuccessfulAction(): ActionContext | null;
+  lastVerification(): VerificationContextSnapshot | null;
+  failureReason(): string | null;
+  retryCount(): number;
   currentLanguage(): 'tr' | 'en';
   snapshot(): ConversationContextSnapshot;
 }
+

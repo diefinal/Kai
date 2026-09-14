@@ -9,6 +9,7 @@ import {
   DomSnapshotContext,
   DomQueryContext,
   DomElementContext,
+  VerificationContextSnapshot,
 } from './ContextTypes';
 
 export class ConversationContext implements IConversationContext {
@@ -21,8 +22,13 @@ export class ConversationContext implements IConversationContext {
   private _lastVisionResult: VisionContext | null = null;
   private _lastExecutionPlan: ExecutionPlanContext | null = null;
   private _lastExecutedAction: ActionContext | null = null;
+  private _lastSuccessfulAction: ActionContext | null = null;
+  private _lastVerification: VerificationContextSnapshot | null = null;
+  private _failureReason: string | null = null;
+  private _retryCount: number = 0;
   private _currentLanguage: 'tr' | 'en' = 'tr';
   private _updatedAt: number = Date.now();
+
 
   currentApplication(): string | null {
     return this._currentApplication;
@@ -60,9 +66,26 @@ export class ConversationContext implements IConversationContext {
     return this._lastExecutedAction;
   }
 
+  lastSuccessfulAction(): ActionContext | null {
+    return this._lastSuccessfulAction;
+  }
+
+  lastVerification(): VerificationContextSnapshot | null {
+    return this._lastVerification;
+  }
+
+  failureReason(): string | null {
+    return this._failureReason;
+  }
+
+  retryCount(): number {
+    return this._retryCount;
+  }
+
   currentLanguage(): 'tr' | 'en' {
     return this._currentLanguage;
   }
+
 
   setCurrentApplication(app: string | null): this {
     this._currentApplication = app;
@@ -124,6 +147,30 @@ export class ConversationContext implements IConversationContext {
     return this;
   }
 
+  setLastSuccessfulAction(action: ActionContext | null): this {
+    this._lastSuccessfulAction = action;
+    this._updatedAt = Date.now();
+    return this;
+  }
+
+  setLastVerification(verification: VerificationContextSnapshot | null): this {
+    this._lastVerification = verification;
+    this._updatedAt = Date.now();
+    return this;
+  }
+
+  setFailureReason(reason: string | null): this {
+    this._failureReason = reason;
+    this._updatedAt = Date.now();
+    return this;
+  }
+
+  setRetryCount(count: number): this {
+    this._retryCount = count;
+    this._updatedAt = Date.now();
+    return this;
+  }
+
   setCurrentLanguage(lang: 'tr' | 'en'): this {
     this._currentLanguage = lang;
     this._updatedAt = Date.now();
@@ -140,6 +187,10 @@ export class ConversationContext implements IConversationContext {
     this._lastVisionResult = null;
     this._lastExecutionPlan = null;
     this._lastExecutedAction = null;
+    this._lastSuccessfulAction = null;
+    this._lastVerification = null;
+    this._failureReason = null;
+    this._retryCount = 0;
     this._currentLanguage = 'tr';
     this._updatedAt = Date.now();
   }
@@ -177,6 +228,15 @@ export class ConversationContext implements IConversationContext {
             parameters: { ...this._lastExecutedAction.parameters },
           }
         : null,
+      lastSuccessfulAction: this._lastSuccessfulAction
+        ? {
+            ...this._lastSuccessfulAction,
+            parameters: { ...this._lastSuccessfulAction.parameters },
+          }
+        : null,
+      lastVerification: this._lastVerification ? { ...this._lastVerification } : null,
+      failureReason: this._failureReason,
+      retryCount: this._retryCount,
       currentLanguage: this._currentLanguage,
       updatedAt: this._updatedAt,
     };

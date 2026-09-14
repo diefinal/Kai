@@ -1,11 +1,23 @@
+import { RetryPolicyType } from '../verification/VerificationStrategy';
+import { VerificationResult } from '../verification/VerificationResult';
+
 export class WorkflowContext {
   public data: Record<string, any> = {};
+  public browserState?: any;
+  public desktopState?: any;
+  public visionState?: any;
 }
 
 export class ExecutionStep {
   public dependsOn?: string[];
   public action?: string;
   public parameters?: Record<string, unknown>;
+  public expectedState?: Record<string, unknown>;
+  public context?: any;
+  public customCheck?: (ctx: any) => Promise<boolean | VerificationResult> | boolean | VerificationResult;
+  public verify?: (ctx: any) => Promise<boolean | VerificationResult> | boolean | VerificationResult;
+  public timeout?: number;
+  public retryPolicy?: RetryPolicyType;
 
   constructor(
     public id: string,
@@ -17,13 +29,26 @@ export class ExecutionStep {
       dependsOn?: string[];
       action?: string;
       parameters?: Record<string, unknown>;
+      expectedState?: Record<string, unknown>;
+      context?: any;
+      customCheck?: (ctx: any) => Promise<boolean | VerificationResult> | boolean | VerificationResult;
+      verify?: (ctx: any) => Promise<boolean | VerificationResult> | boolean | VerificationResult;
+      timeout?: number;
+      retryPolicy?: RetryPolicyType;
     }
   ) {
     this.dependsOn = options?.dependsOn;
     this.action = options?.action || toolName;
     this.parameters = options?.parameters || payload;
+    this.expectedState = options?.expectedState;
+    this.context = options?.context;
+    this.customCheck = options?.customCheck;
+    this.verify = options?.verify;
+    this.timeout = options?.timeout;
+    this.retryPolicy = options?.retryPolicy;
   }
 }
+
 
 export class ExecutionPlan {
   constructor(

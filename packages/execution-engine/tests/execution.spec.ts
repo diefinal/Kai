@@ -55,11 +55,14 @@ describe('Execution Engine Core', () => {
       EventTypes.Checkpoint, // EXECUTING
       EventTypes.ExecutionStarted,
       EventTypes.StepStarted,
+      EventTypes.VerificationStarted,
+      EventTypes.VerificationCompleted,
       EventTypes.StepCompleted,
       EventTypes.Checkpoint, // check
       EventTypes.Checkpoint, // COMPLETED
       EventTypes.ExecutionCompleted
     ]);
+
   });
 
   it('Handles retry mechanism', async () => {
