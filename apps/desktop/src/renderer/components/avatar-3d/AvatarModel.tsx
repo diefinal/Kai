@@ -1,5 +1,5 @@
-﻿import React, { useRef, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+﻿import React, { useRef, useLayoutEffect } from 'react';
+import { useThree } from '@react-three/fiber';
 import { useGLTF, useAnimations, Text, Float } from '@react-three/drei';
 import type { KaiAvatar3DState } from './KaiAvatar3DState';
 import * as THREE from 'three';
@@ -12,7 +12,7 @@ interface AvatarModelProps {
 export const AvatarPlaceholder: React.FC = () => {
   return (
     <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
-      <mesh position={[0, 1.5, 0]}>
+      <mesh position={[0, 0, 0]}>
         <boxGeometry args={[2, 1, 0.1]} />
         <meshStandardMaterial color="#1e293b" opacity={0.8} transparent />
         <Text
@@ -38,25 +38,67 @@ export const AvatarPlaceholder: React.FC = () => {
   );
 };
 
+export const AutoFittedModel: React.FC<{ object: THREE.Object3D }> = ({ object }) => {
+  const { camera } = useThree();
+  const groupRef = useRef<THREE.Group>(null);
+
+  useLayoutEffect(() => {
+    if (!groupRef.current) return;
+
+    // Automatically compute model bounds
+    const box = new THREE.Box3().setFromObject(groupRef.current);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+
+    // Center the model automatically
+    groupRef.current.position.x = -center.x;
+    groupRef.current.position.y = -center.y;
+    groupRef.current.position.z = -center.z;
+
+    // Automatic Camera Fit & Auto Scale (10% padding)
+    const maxDim = Math.max(size.x, size.y, size.z);
+    if (maxDim > 0 && camera instanceof THREE.PerspectiveCamera) {
+      const fov = camera.fov * (Math.PI / 180);
+      let cameraDistance = (maxDim / 2) / Math.tan(fov / 2);
+      cameraDistance *= 1.1; // 10% padding so head and feet are never cropped
+
+      camera.position.set(0, 0, cameraDistance);
+      camera.lookAt(0, 0, 0);
+      camera.updateProjectionMatrix();
+    }
+  }, [object, camera]);
+
+  return (
+    <group ref={groupRef}>
+      <primitive object={object} />
+    </group>
+  );
+};
+
+export const LoadedModelContent: React.FC<{ url: string; state: KaiAvatar3DState }> = ({ url, state }) => {
+  const { scene, animations } = useGLTF(url);
+  const { actions } = useAnimations(animations, scene);
+
+  useLayoutEffect(() => {
+    // Check if matching animation state exists
+    const currentAction = actions[state] || actions['idle'] || Object.values(actions)[0];
+    if (currentAction) {
+      currentAction.reset().fadeIn(0.2).play();
+      return () => {
+        currentAction.fadeOut(0.2);
+      };
+    }
+  }, [state, actions]);
+
+  return <AutoFittedModel object={scene} />;
+};
+
 export const AvatarModel: React.FC<AvatarModelProps> = ({ modelUrl, state }) => {
-  // If no URL is provided, return the strict placeholder
   if (!modelUrl) {
     return <AvatarPlaceholder />;
   }
 
-  // Future implementation of the actual model loading
-  // const { scene, animations } = useGLTF(modelUrl);
-  // const { actions } = useAnimations(animations, scene);
-  
-  // useEffect(() => {
-  //   // Handle animation transitions based on \state\
-  //   // Example: actions['idle']?.play();
-  // }, [state, actions]);
-
-  // return <primitive object={scene} />;
-  
-  return <AvatarPlaceholder />;
+  return <LoadedModelContent url={modelUrl} state={state} />;
 };
-
-// Preload standard URL if needed later
-// useGLTF.preload('/models/kai.glb');
