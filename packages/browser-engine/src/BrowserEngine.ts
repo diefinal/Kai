@@ -13,18 +13,22 @@ import { IPlaywrightProvider } from './BrowserTypes';
 import { DefaultPlaywrightProvider } from './PlaywrightProvider';
 import { DomEngine } from './dom/DomEngine';
 import { DomQueryCriteria } from './dom/DomQuery';
+import { AutomationEngine } from './automation/AutomationEngine';
 
 export class BrowserEngine {
   private readonly manager: BrowserManager;
   private readonly domEngine: DomEngine;
+  private readonly automationEngine: AutomationEngine;
 
   constructor(
     provider: IPlaywrightProvider = new DefaultPlaywrightProvider(),
-    domEngine: DomEngine = new DomEngine()
+    domEngine: DomEngine = new DomEngine(),
+    automationEngine: AutomationEngine = new AutomationEngine(domEngine)
   ) {
     const factory = new BrowserFactory(provider);
     this.manager = new BrowserManager(factory);
     this.domEngine = domEngine;
+    this.automationEngine = automationEngine;
   }
 
   getManager(): BrowserManager {
@@ -34,6 +38,11 @@ export class BrowserEngine {
   getDomEngine(): DomEngine {
     return this.domEngine;
   }
+
+  getAutomation(): AutomationEngine {
+    return this.automationEngine;
+  }
+
 
   async launch(
     browserType: BrowserType = 'chrome',
@@ -252,8 +261,67 @@ export class BrowserEngine {
         return { text };
       }
 
+      case 'CLICK_BUTTON':
+      case 'CLICK_LINK':
+      case 'CLICK_ELEMENT': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available.');
+        const criteria = {
+          text: parameters.text as string | undefined,
+          role:
+            (parameters.role as string) ||
+            (norm === 'CLICK_BUTTON' ? 'button' : norm === 'CLICK_LINK' ? 'link' : undefined),
+          selector: parameters.selector as string | undefined,
+          ariaLabel: (parameters.ariaLabel || parameters['aria-label']) as string | undefined,
+          placeholder: parameters.placeholder as string | undefined,
+        };
+        return this.automationEngine.click(tab, criteria);
+      }
+
+      case 'FILL_INPUT':
+      case 'FILL_TEXTAREA':
+      case 'TYPE_TEXT': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available.');
+        const value = (parameters.value as string) ?? (parameters.text as string) ?? '';
+        const criteria = {
+          name: parameters.name as string | undefined,
+          placeholder: parameters.placeholder as string | undefined,
+          selector: parameters.selector as string | undefined,
+          type: parameters.type as string | undefined,
+          text: (parameters.label as string) || (parameters.placeholder as string),
+        };
+        return this.automationEngine.fill(tab, criteria, value);
+      }
+
+      case 'SELECT_OPTION': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available.');
+        const value = (parameters.value as string) || (parameters.option as string) || '';
+        return this.automationEngine.select(tab, { selector: parameters.selector as string }, value);
+      }
+
+      case 'CHECK_CHECKBOX': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available.');
+        const checked = parameters.checked !== false;
+        return this.automationEngine.check(tab, { selector: parameters.selector as string }, checked);
+      }
+
+      case 'SUBMIT_FORM': {
+        const session = await this.ensureSession(sessionId);
+        const tab = session.activeTab();
+        if (!tab) throw new BrowserError('TAB_NOT_FOUND', 'No active tab available.');
+        return this.automationEngine.submitForm(tab, parameters.form as string | undefined);
+      }
+
       default:
         throw new BrowserError('DRIVER_ERROR', `Unknown browser action: "${action}"`);
     }
   }
 }
+

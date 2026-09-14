@@ -6,3 +6,5 @@ export * from './BrowserFactory';
 export * from './BrowserManager';
 export * from './BrowserEngine';
 export * from './dom';
+export * from './automation';
+

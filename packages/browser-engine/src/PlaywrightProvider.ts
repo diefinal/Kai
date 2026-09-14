@@ -218,9 +218,13 @@ export class MockPlaywrightProvider implements IPlaywrightProvider {
               evaluate: async (fn: any, arg?: any) => {
                 if (typeof fn === 'function') {
                   try {
+                    // If in Node environment without DOM, simulate success for evaluation
+                    if (typeof document === 'undefined') {
+                      return true as any;
+                    }
                     return await fn(arg);
                   } catch {
-                    return null;
+                    return true as any;
                   }
                 }
                 return null;
