@@ -1,4 +1,4 @@
-﻿/**
+/**
  * KaiAvatar Component (2D Sprite View)
  *
  * Mandatory Reference: /docs/KAI_IDENTITY.md
@@ -47,10 +47,10 @@ export const KaiAvatar: React.FC<KaiAvatarProps> = ({ state, size = 160 }) => {
   }
 
   return (
-    <div className={kai-avatar-wrapper state-} style={{ width: size, height: size }}>
+    <div className={`kai-avatar-wrapper state-${state}`} style={{ width: size, height: size }}>
       <div className="kai-avatar-glow-layer"></div>
       <div className="kai-avatar-image-container">
-        <img src={imgSrc} alt={Official Kai ()} className="kai-avatar-img" />
+        <img src={imgSrc} alt={`Official Kai (${state})`} className="kai-avatar-img" />
       </div>
       <div className="kai-avatar-effects"></div>
     </div>

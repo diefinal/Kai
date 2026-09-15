@@ -1,9 +1,17 @@
-﻿{
+{
   "name": "@kai/avatar-engine",
   "version": "1.0.0",
   "description": "Official Kai Character Registry and Avatar Engine",
+  "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
