@@ -21,10 +21,12 @@ export default defineConfig({
   },
   renderer: {
     root: resolve(__dirname, 'src/renderer'),
+    publicDir: resolve(__dirname, 'public'),
     plugins: [react()],
     resolve: {
       alias: {
         '@kai/planner': resolve(__dirname, '../../packages/planner/src/index.ts'),
+        '@kai/avatar-engine': resolve(__dirname, '../../packages/avatar-engine/src/index.ts'),
       },
     },
     build: {
