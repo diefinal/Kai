@@ -1,0 +1,544 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   THEME TOKENS (LIGHT, DARK, OCEAN)
+   ========================================================================== */
+
+:root, [data-theme="light"] {
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-secondary: #f1f5f9;
+  --foreground: #0f172a;
+  --muted-foreground: #64748b;
+  --subtle-foreground: #94a3b8;
+  --border: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --input-background: #ffffff;
+  --input-foreground: #0f172a;
+  --input-border: #cbd5e1;
+  --input-placeholder: #94a3b8;
+  --primary: #0f172a;
+  --primary-foreground: #ffffff;
+
+  /* Badges & Accents in Light Theme */
+  --badge-emerald-bg: #ecfdf5;
+  --badge-emerald-text: #047857;
+  --badge-emerald-border: #a7f3d0;
+  --badge-blue-bg: #eff6ff;
+  --badge-blue-text: #1d4ed8;
+  --badge-blue-border: #bfdbfe;
+  --badge-purple-bg: #faf5ff;
+  --badge-purple-text: #6b21a8;
+  --badge-purple-border: #e9d5ff;
+  --badge-amber-bg: #fffbeb;
+  --badge-amber-text: #b45309;
+  --badge-amber-border: #fde68a;
+  --badge-red-bg: #fef2f2;
+  --badge-red-text: #b91c1c;
+  --badge-red-border: #fecaca;
+}
+
+[data-theme="dark"] {
+  --background: #0b1120;
+  --surface: #1e293b;
+  --surface-secondary: #0f172a;
+  --foreground: #f8fafc;
+  --muted-foreground: #cbd5e1;
+  --subtle-foreground: #94a3b8;
+  --border: #334155;
+  --border-subtle: #1e293b;
+  --input-background: #0f172a;
+  --input-foreground: #f8fafc;
+  --input-border: #475569;
+  --input-placeholder: #64748b;
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+
+  /* Badges & Accents in Dark Theme (High Contrast > 5:1) */
+  --badge-emerald-bg: rgba(16, 185, 129, 0.16);
+  --badge-emerald-text: #34d399;
+  --badge-emerald-border: rgba(52, 211, 153, 0.35);
+  --badge-blue-bg: rgba(59, 130, 246, 0.16);
+  --badge-blue-text: #60a5fa;
+  --badge-blue-border: rgba(96, 165, 250, 0.35);
+  --badge-purple-bg: rgba(168, 85, 247, 0.16);
+  --badge-purple-text: #c084fc;
+  --badge-purple-border: rgba(192, 132, 252, 0.35);
+  --badge-amber-bg: rgba(245, 158, 11, 0.16);
+  --badge-amber-text: #fbbf24;
+  --badge-amber-border: rgba(251, 191, 36, 0.35);
+  --badge-red-bg: rgba(239, 68, 68, 0.16);
+  --badge-red-text: #f87171;
+  --badge-red-border: rgba(248, 113, 113, 0.35);
+}
+
+[data-theme="ocean"] {
+  --background: #071324;
+  --surface: #0f223d;
+  --surface-secondary: #0a182d;
+  --foreground: #f0f6fc;
+  --muted-foreground: #93c5fd;
+  --subtle-foreground: #60a5fa;
+  --border: #1e3e62;
+  --border-subtle: #132b49;
+  --input-background: #0a182d;
+  --input-foreground: #f0f6fc;
+  --input-border: #254b77;
+  --input-placeholder: #6282a5;
+  --primary: #0ea5e9;
+  --primary-foreground: #ffffff;
+
+  /* Badges & Accents in Ocean Theme */
+  --badge-emerald-bg: rgba(16, 185, 129, 0.18);
+  --badge-emerald-text: #34d399;
+  --badge-emerald-border: rgba(52, 211, 153, 0.4);
+  --badge-blue-bg: rgba(14, 165, 233, 0.18);
+  --badge-blue-text: #38bdf8;
+  --badge-blue-border: rgba(56, 189, 248, 0.4);
+  --badge-purple-bg: rgba(168, 85, 247, 0.18);
+  --badge-purple-text: #d8b4fe;
+  --badge-purple-border: rgba(216, 180, 254, 0.4);
+  --badge-amber-bg: rgba(245, 158, 11, 0.18);
+  --badge-amber-text: #fcd34d;
+  --badge-amber-border: rgba(252, 211, 77, 0.4);
+  --badge-red-bg: rgba(239, 68, 68, 0.18);
+  --badge-red-text: #fca5a5;
+  --badge-red-border: rgba(252, 165, 165, 0.4);
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ==========================================================================
+   DARK THEME UTILITY OVERRIDES
+   ========================================================================== */
+
+[data-theme="dark"] .bg-slate-100 {
+  background-color: var(--background) !important;
+}
+
+[data-theme="dark"] .bg-slate-50,
+[data-theme="dark"] .bg-slate-50\/80,
+[data-theme="dark"] .bg-slate-50\/60,
+[data-theme="dark"] .bg-slate-50\/40,
+[data-theme="dark"] .bg-slate-50\/20 {
+  background-color: var(--surface-secondary) !important;
+}
+
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-white\/95,
+[data-theme="dark"] .bg-white\/80 {
+  background-color: var(--surface) !important;
+  color: var(--foreground);
+}
+
+[data-theme="dark"] .border-slate-200,
+[data-theme="dark"] .border-slate-100,
+[data-theme="dark"] .border-slate-300,
+[data-theme="dark"] .border-slate-200\/80,
+[data-theme="dark"] .border-slate-200\/60 {
+  border-color: var(--border) !important;
+}
+
+[data-theme="dark"] .divide-slate-100 > * + *,
+[data-theme="dark"] .divide-slate-200 > * + * {
+  border-color: var(--border) !important;
+}
+
+[data-theme="dark"] .text-slate-900,
+[data-theme="dark"] .text-slate-800,
+[data-theme="dark"] .text-slate-700 {
+  color: var(--foreground) !important;
+}
+
+[data-theme="dark"] .text-slate-600,
+[data-theme="dark"] .text-slate-500 {
+  color: var(--muted-foreground) !important;
+}
+
+[data-theme="dark"] .text-slate-400,
+[data-theme="dark"] .text-slate-300 {
+  color: var(--subtle-foreground) !important;
+}
+
+/* Dark Theme Form Controls */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: var(--input-background) !important;
+  color: var(--input-foreground) !important;
+  border-color: var(--input-border) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--input-placeholder) !important;
+}
+
+select, option {
+  color: var(--input-foreground);
+  background-color: var(--input-background);
+}
+
+[data-theme="light"] select,
+[data-theme="light"] option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+[data-theme="dark"] option {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+/* Dark Theme Table Elements */
+[data-theme="dark"] thead tr,
+[data-theme="dark"] thead th {
+  background-color: var(--surface-secondary) !important;
+  color: var(--muted-foreground) !important;
+  border-color: var(--border) !important;
+}
+
+[data-theme="dark"] tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Dark Theme Hover States */
+[data-theme="dark"] .hover\:bg-slate-100:hover,
+[data-theme="dark"] .hover\:bg-slate-200:hover,
+[data-theme="dark"] .hover\:bg-slate-50:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Dark Theme Badges & Color Pills */
+[data-theme="dark"] .bg-emerald-50,
+[data-theme="dark"] .bg-emerald-100,
+[data-theme="dark"] .bg-emerald-50\/40,
+[data-theme="dark"] .bg-emerald-50\/80 {
+  background-color: var(--badge-emerald-bg) !important;
+}
+[data-theme="dark"] .text-emerald-600,
+[data-theme="dark"] .text-emerald-700,
+[data-theme="dark"] .text-emerald-800,
+[data-theme="dark"] .text-emerald-900,
+[data-theme="dark"] .text-emerald-950 {
+  color: var(--badge-emerald-text) !important;
+}
+[data-theme="dark"] .border-emerald-200 {
+  border-color: var(--badge-emerald-border) !important;
+}
+
+[data-theme="dark"] .bg-blue-50,
+[data-theme="dark"] .bg-blue-100,
+[data-theme="dark"] .bg-blue-50\/40 {
+  background-color: var(--badge-blue-bg) !important;
+}
+[data-theme="dark"] .text-blue-600,
+[data-theme="dark"] .text-blue-700,
+[data-theme="dark"] .text-blue-800,
+[data-theme="dark"] .text-blue-900,
+[data-theme="dark"] .text-blue-950 {
+  color: var(--badge-blue-text) !important;
+}
+[data-theme="dark"] .border-blue-200,
+[data-theme="dark"] .border-blue-300 {
+  border-color: var(--badge-blue-border) !important;
+}
+
+[data-theme="dark"] .bg-purple-50,
+[data-theme="dark"] .bg-purple-100,
+[data-theme="dark"] .bg-purple-50\/40 {
+  background-color: var(--badge-purple-bg) !important;
+}
+[data-theme="dark"] .text-purple-600,
+[data-theme="dark"] .text-purple-700,
+[data-theme="dark"] .text-purple-800,
+[data-theme="dark"] .text-purple-900,
+[data-theme="dark"] .text-purple-950 {
+  color: var(--badge-purple-text) !important;
+}
+[data-theme="dark"] .border-purple-200,
+[data-theme="dark"] .border-purple-300 {
+  border-color: var(--badge-purple-border) !important;
+}
+
+[data-theme="dark"] .bg-amber-50,
+[data-theme="dark"] .bg-amber-100,
+[data-theme="dark"] .bg-amber-50\/40 {
+  background-color: var(--badge-amber-bg) !important;
+}
+[data-theme="dark"] .text-amber-600,
+[data-theme="dark"] .text-amber-700,
+[data-theme="dark"] .text-amber-800,
+[data-theme="dark"] .text-amber-900,
+[data-theme="dark"] .text-amber-950 {
+  color: var(--badge-amber-text) !important;
+}
+[data-theme="dark"] .border-amber-200 {
+  border-color: var(--badge-amber-border) !important;
+}
+
+[data-theme="dark"] .bg-red-50,
+[data-theme="dark"] .bg-red-100,
+[data-theme="dark"] .bg-red-50\/40,
+[data-theme="dark"] .bg-red-50\/20 {
+  background-color: var(--badge-red-bg) !important;
+}
+[data-theme="dark"] .text-red-600,
+[data-theme="dark"] .text-red-700,
+[data-theme="dark"] .text-red-800,
+[data-theme="dark"] .text-red-900,
+[data-theme="dark"] .text-red-950 {
+  color: var(--badge-red-text) !important;
+}
+[data-theme="dark"] .border-red-200 {
+  border-color: var(--badge-red-border) !important;
+}
+
+/* ==========================================================================
+   OCEAN THEME UTILITY OVERRIDES
+   ========================================================================== */
+
+[data-theme="ocean"] .bg-slate-100 {
+  background-color: var(--background) !important;
+}
+
+[data-theme="ocean"] .bg-slate-50,
+[data-theme="ocean"] .bg-slate-50\/80,
+[data-theme="ocean"] .bg-slate-50\/60,
+[data-theme="ocean"] .bg-slate-50\/40,
+[data-theme="ocean"] .bg-slate-50\/20 {
+  background-color: var(--surface-secondary) !important;
+}
+
+[data-theme="ocean"] .bg-white,
+[data-theme="ocean"] .bg-white\/95,
+[data-theme="ocean"] .bg-white\/80 {
+  background-color: var(--surface) !important;
+  color: var(--foreground);
+}
+
+[data-theme="ocean"] .border-slate-200,
+[data-theme="ocean"] .border-slate-100,
+[data-theme="ocean"] .border-slate-300,
+[data-theme="ocean"] .border-slate-200\/80,
+[data-theme="ocean"] .border-slate-200\/60 {
+  border-color: var(--border) !important;
+}
+
+[data-theme="ocean"] .divide-slate-100 > * + *,
+[data-theme="ocean"] .divide-slate-200 > * + * {
+  border-color: var(--border) !important;
+}
+
+[data-theme="ocean"] .text-slate-900,
+[data-theme="ocean"] .text-slate-800,
+[data-theme="ocean"] .text-slate-700 {
+  color: var(--foreground) !important;
+}
+
+[data-theme="ocean"] .text-slate-600,
+[data-theme="ocean"] .text-slate-500 {
+  color: var(--muted-foreground) !important;
+}
+
+[data-theme="ocean"] .text-slate-400,
+[data-theme="ocean"] .text-slate-300 {
+  color: var(--subtle-foreground) !important;
+}
+
+/* Ocean Theme Form Controls */
+[data-theme="ocean"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="ocean"] select,
+[data-theme="ocean"] textarea {
+  background-color: var(--input-background) !important;
+  color: var(--input-foreground) !important;
+  border-color: var(--input-border) !important;
+}
+
+[data-theme="ocean"] input::placeholder,
+[data-theme="ocean"] textarea::placeholder {
+  color: var(--input-placeholder) !important;
+}
+
+[data-theme="ocean"] option {
+  background-color: var(--surface) !important;
+  color: var(--foreground) !important;
+}
+
+/* Ocean Theme Table Elements */
+[data-theme="ocean"] thead tr,
+[data-theme="ocean"] thead th {
+  background-color: var(--surface-secondary) !important;
+  color: var(--muted-foreground) !important;
+  border-color: var(--border) !important;
+}
+
+[data-theme="ocean"] tbody tr:hover {
+  background-color: rgba(30, 62, 98, 0.35) !important;
+}
+
+/* Ocean Theme Hover States */
+[data-theme="ocean"] .hover\:bg-slate-100:hover,
+[data-theme="ocean"] .hover\:bg-slate-200:hover,
+[data-theme="ocean"] .hover\:bg-slate-50:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Ocean Theme Badges & Color Pills */
+[data-theme="ocean"] .bg-emerald-50,
+[data-theme="ocean"] .bg-emerald-100,
+[data-theme="ocean"] .bg-emerald-50\/40,
+[data-theme="ocean"] .bg-emerald-50\/80 {
+  background-color: var(--badge-emerald-bg) !important;
+}
+[data-theme="ocean"] .text-emerald-600,
+[data-theme="ocean"] .text-emerald-700,
+[data-theme="ocean"] .text-emerald-800,
+[data-theme="ocean"] .text-emerald-900,
+[data-theme="ocean"] .text-emerald-950 {
+  color: var(--badge-emerald-text) !important;
+}
+[data-theme="ocean"] .border-emerald-200 {
+  border-color: var(--badge-emerald-border) !important;
+}
+
+[data-theme="ocean"] .bg-blue-50,
+[data-theme="ocean"] .bg-blue-100,
+[data-theme="ocean"] .bg-blue-50\/40 {
+  background-color: var(--badge-blue-bg) !important;
+}
+[data-theme="ocean"] .text-blue-600,
+[data-theme="ocean"] .text-blue-700,
+[data-theme="ocean"] .text-blue-800,
+[data-theme="ocean"] .text-blue-900,
+[data-theme="ocean"] .text-blue-950 {
+  color: var(--badge-blue-text) !important;
+}
+[data-theme="ocean"] .border-blue-200,
+[data-theme="ocean"] .border-blue-300 {
+  border-color: var(--badge-blue-border) !important;
+}
+
+[data-theme="ocean"] .bg-purple-50,
+[data-theme="ocean"] .bg-purple-100,
+[data-theme="ocean"] .bg-purple-50\/40 {
+  background-color: var(--badge-purple-bg) !important;
+}
+[data-theme="ocean"] .text-purple-600,
+[data-theme="ocean"] .text-purple-700,
+[data-theme="ocean"] .text-purple-800,
+[data-theme="ocean"] .text-purple-900,
+[data-theme="ocean"] .text-purple-950 {
+  color: var(--badge-purple-text) !important;
+}
+[data-theme="ocean"] .border-purple-200,
+[data-theme="ocean"] .border-purple-300 {
+  border-color: var(--badge-purple-border) !important;
+}
+
+[data-theme="ocean"] .bg-amber-50,
+[data-theme="ocean"] .bg-amber-100,
+[data-theme="ocean"] .bg-amber-50\/40 {
+  background-color: var(--badge-amber-bg) !important;
+}
+[data-theme="ocean"] .text-amber-600,
+[data-theme="ocean"] .text-amber-700,
+[data-theme="ocean"] .text-amber-800,
+[data-theme="ocean"] .text-amber-900,
+[data-theme="ocean"] .text-amber-950 {
+  color: var(--badge-amber-text) !important;
+}
+[data-theme="ocean"] .border-amber-200 {
+  border-color: var(--badge-amber-border) !important;
+}
+
+[data-theme="ocean"] .bg-red-50,
+[data-theme="ocean"] .bg-red-100,
+[data-theme="ocean"] .bg-red-50\/40,
+[data-theme="ocean"] .bg-red-50\/20 {
+  background-color: var(--badge-red-bg) !important;
+}
+[data-theme="ocean"] .text-red-600,
+[data-theme="ocean"] .text-red-700,
+[data-theme="ocean"] .text-red-800,
+[data-theme="ocean"] .text-red-900,
+[data-theme="ocean"] .text-red-950 {
+  color: var(--badge-red-text) !important;
+}
+[data-theme="ocean"] .border-red-200 {
+  border-color: var(--badge-red-border) !important;
+}
+
+/* ==========================================================================
+   BUTTON & COMPONENT DEFINITIONS FOR DARK & OCEAN
+   ========================================================================== */
+
+[data-theme="dark"] button.bg-slate-900,
+[data-theme="dark"] a.bg-slate-900,
+[data-theme="ocean"] button.bg-slate-900,
+[data-theme="ocean"] a.bg-slate-900 {
+  border: 1px solid var(--border);
+}
+
+[data-theme="ocean"] .bg-slate-900 {
+  background-color: #0c213f;
+}
+
+/* ==========================================================================
+   CUSTOM THIN MODERN HORIZONTAL SCROLLBAR
+   ========================================================================== */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+[data-theme="dark"] .custom-scrollbar {
+  scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+}
+
+[data-theme="ocean"] .custom-scrollbar {
+  scrollbar-color: rgba(56, 189, 248, 0.4) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.6);
+}
+
+[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.45);
+}
+
+[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.7);
+}
+
+[data-theme="ocean"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(56, 189, 248, 0.35);
+}
+
+[data-theme="ocean"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(56, 189, 248, 0.65);
+}
