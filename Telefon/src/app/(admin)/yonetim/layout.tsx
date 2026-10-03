@@ -21,6 +21,7 @@ import {
   ExternalLink,
   Megaphone,
   Sparkles,
+  Tag,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -28,6 +29,7 @@ const navItems = [
   { href: "/yonetim", label: "Genel Bakış", icon: LayoutDashboard },
   { href: "/yonetim/satis-firsatlari", label: "Satış Fırsatları", icon: Sparkles },
   { href: "/yonetim/telefonlar", label: "Ürünler", icon: Smartphone },
+  { href: "/yonetim/musteri-fiyatlari", label: "Müşteri Ekranı Fiyatları", icon: Tag },
   { href: "/yonetim/stoklar", label: "Stoklar", icon: Boxes },
   { href: "/yonetim/alislar", label: "Alış Girişleri", icon: ArrowDownLeft },
   { href: "/yonetim/satislar", label: "Satışlar", icon: ArrowUpRight },

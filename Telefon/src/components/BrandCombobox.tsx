@@ -56,9 +56,10 @@ export function BrandCombobox({
   // Filter available brands based on query
   const filteredBrands = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return availableBrands;
+    const cleanVal = value.trim().toLowerCase();
+    if (!trimmed || trimmed === cleanVal) return availableBrands;
     return availableBrands.filter((b) => b.toLowerCase().includes(trimmed));
-  }, [query, availableBrands]);
+  }, [query, value, availableBrands]);
 
   // Check for exact case-insensitive match
   const exactMatch = useMemo(() => {
@@ -83,7 +84,10 @@ export function BrandCombobox({
           value={query}
           required={required}
           placeholder={placeholder}
-          onFocus={() => setIsOpen(true)}
+          onFocus={(e) => {
+            setIsOpen(true);
+            e.target.select();
+          }}
           onChange={(e) => {
             const nextQuery = e.target.value;
             setQuery(nextQuery);

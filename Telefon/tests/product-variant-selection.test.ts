@@ -159,4 +159,52 @@ describe("PhoneModelVariant Selection & PublicProductDTO Tests", () => {
     assert.equal(explicit512Dto.basePrice, 63000);
     assert.equal(explicit512Dto.inStock, false);
   });
+
+  test("Color-Level Customer Price Override: Siyah -> 29.000 TL, Mavi -> 29.500 TL, Beyaz -> 27.500 TL (Internal Sale)", () => {
+    const model: PhoneModelWithVariantsAndDevices = {
+      id: "xiaomi-color-override-id",
+      brand: "Xiaomi",
+      modelName: "15T",
+      ram: "12 GB",
+      storage: "512 GB",
+      color: "Siyah,Mavi,Beyaz",
+      description: null,
+      imageUrl: null,
+      colorImages: null,
+      specs: null,
+      basePrice: 27500,
+      isActive: true,
+      variants: [
+        {
+          id: "var-512",
+          phoneModelId: "xiaomi-color-override-id",
+          ram: "12 GB",
+          storage: "512 GB",
+          price: 27500,
+          customerPrice: null,
+          isActive: true,
+          colorPrices: [
+            { id: "cp-siyah", color: "Siyah", customerPrice: 29000 },
+            { id: "cp-mavi", color: "Mavi", customerPrice: 29500 },
+          ],
+        },
+      ],
+      devices: [],
+    };
+
+    // Siyah selected => 29.000 TL
+    const siyahDto = buildPublicProductDTO(model, "12 GB", "512 GB", "Siyah");
+    assert.equal(siyahDto.color, "Siyah");
+    assert.equal(siyahDto.basePrice, 29000);
+
+    // Mavi selected => 29.500 TL
+    const maviDto = buildPublicProductDTO(model, "12 GB", "512 GB", "Mavi");
+    assert.equal(maviDto.color, "Mavi");
+    assert.equal(maviDto.basePrice, 29500);
+
+    // Beyaz selected (no color override, no variant customerPrice) => 27.500 TL (Internal Sale Price)
+    const beyazDto = buildPublicProductDTO(model, "12 GB", "512 GB", "Beyaz");
+    assert.equal(beyazDto.color, "Beyaz");
+    assert.equal(beyazDto.basePrice, 27500);
+  });
 });

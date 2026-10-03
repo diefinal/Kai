@@ -22,6 +22,11 @@ export interface PhoneModelWithVariantsAndDevices {
     price: unknown;
     customerPrice?: unknown;
     isActive: boolean;
+    colorPrices?: {
+      id?: string;
+      color: string;
+      customerPrice: unknown;
+    }[];
   }[];
   devices: {
     id: string;
@@ -34,6 +39,8 @@ export interface PhoneModelWithVariantsAndDevices {
   }[];
 }
 
+export type PriceSourceType = "TRACKING_SALE_PRICE" | "VARIANT_CUSTOMER_PRICE" | "COLOR_CUSTOMER_PRICE";
+
 export interface ResolvedVariantInfo {
   variantId: string;
   ram: string;
@@ -41,6 +48,7 @@ export interface ResolvedVariantInfo {
   price: number;
   customerPrice: number | null;
   internalSalePrice: number;
+  priceSource: PriceSourceType;
   inStock: boolean;
   stockCount: number;
   colorsWithStock: ColorAvailabilityDTO[];
@@ -67,12 +75,67 @@ export function parseColorImagesMap(colorImagesRaw: unknown): Map<string, string
 }
 
 /**
-  * Resolves variant details (price, stock, colors) for a specific RAM/Storage or selects the default variant.
+ * Resolves effective showcase price, customerPrice override, and priceSource for a variant + color combination.
+ */
+export function resolveCustomerPriceForVariantAndColor(
+  v: {
+    price: unknown;
+    customerPrice?: unknown;
+    colorPrices?: { color: string; customerPrice: unknown }[];
+  },
+  targetColor: string | null | undefined,
+  internalSalePrice: number
+): { price: number; customerPrice: number | null; priceSource: PriceSourceType } {
+  const parsePriceNumber = (val: unknown): number => {
+    if (val === null || val === undefined) return 0;
+    const parsed = Number(val);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // 1. Color-level override check
+  if (targetColor && v.colorPrices && Array.isArray(v.colorPrices)) {
+    const cleanTargetColor = targetColor.trim().toLowerCase();
+    const matchedColorPrice = v.colorPrices.find(
+      (cp) => cp.color && cp.color.trim().toLowerCase() === cleanTargetColor
+    );
+    if (matchedColorPrice) {
+      const colorPriceVal = parsePriceNumber(matchedColorPrice.customerPrice);
+      if (colorPriceVal > 0) {
+        return {
+          price: colorPriceVal,
+          customerPrice: colorPriceVal,
+          priceSource: "COLOR_CUSTOMER_PRICE",
+        };
+      }
+    }
+  }
+
+  // 2. Variant-level override check
+  const variantCustomerPriceVal = parsePriceNumber(v.customerPrice);
+  if (variantCustomerPriceVal > 0) {
+    return {
+      price: variantCustomerPriceVal,
+      customerPrice: variantCustomerPriceVal,
+      priceSource: "VARIANT_CUSTOMER_PRICE",
+    };
+  }
+
+  // 3. Fallback to Internal Sale Price
+  return {
+    price: internalSalePrice,
+    customerPrice: null,
+    priceSource: "TRACKING_SALE_PRICE",
+  };
+}
+
+/**
+  * Resolves variant details (price, stock, colors) for a specific RAM/Storage/Color or selects the default variant.
   */
 export function resolveModelVariant(
   model: PhoneModelWithVariantsAndDevices,
   requestedRam?: string | null,
-  requestedStorage?: string | null
+  requestedStorage?: string | null,
+  requestedColor?: string | null
 ): ResolvedVariantInfo {
   const activeVariants = model.variants.filter((v) => v.isActive);
   const inStockDevices = model.devices.filter((d) => d.status === "IN_STOCK");
@@ -120,23 +183,21 @@ export function resolveModelVariant(
       ? Number(model.basePrice)
       : 10000;
 
-    const parsePriceNumber = (val: unknown): number => {
-      if (val === null || val === undefined) return 0;
-      const parsed = Number(val);
-      return isNaN(parsed) ? 0 : parsed;
-    };
-
-    const rawCustomerPrice = parsePriceNumber(v.customerPrice);
-    const showcasePrice = rawCustomerPrice > 0 ? rawCustomerPrice : internalSalePrice;
+    const resolvedPriceInfo = resolveCustomerPriceForVariantAndColor(
+      v,
+      requestedColor,
+      internalSalePrice
+    );
 
     return {
       variant: v,
       vDevices,
       hasStock,
       stockCount,
-      price: showcasePrice,
+      price: resolvedPriceInfo.price,
       internalSalePrice,
-      customerPrice: rawCustomerPrice > 0 ? rawCustomerPrice : null,
+      customerPrice: resolvedPriceInfo.customerPrice,
+      priceSource: resolvedPriceInfo.priceSource,
     };
   };
 
@@ -220,13 +281,22 @@ export function resolveModelVariant(
     colorImagesObj[lower] = url;
   });
 
+  // Re-evaluate price for selected color if requestedColor wasn't set initially
+  const activeColor = requestedColor || defaultColor;
+  const finalPriceInfo = resolveCustomerPriceForVariantAndColor(
+    selected.variant,
+    activeColor,
+    selected.internalSalePrice
+  );
+
   return {
     variantId: selected.variant.id,
     ram: selected.variant.ram,
     storage: selected.variant.storage,
-    price: selected.price,
-    customerPrice: selected.customerPrice,
+    price: finalPriceInfo.price,
+    customerPrice: finalPriceInfo.customerPrice,
     internalSalePrice: selected.internalSalePrice,
+    priceSource: finalPriceInfo.priceSource,
     inStock: selected.hasStock,
     stockCount: selected.stockCount,
     colorsWithStock,
@@ -244,7 +314,7 @@ export function buildPublicProductDTO(
   requestedStorage?: string | null,
   requestedColor?: string | null
 ): PublicProductDTO {
-  const resolved = resolveModelVariant(model, requestedRam, requestedStorage);
+  const resolved = resolveModelVariant(model, requestedRam, requestedStorage, requestedColor);
 
   let activeColor = resolved.defaultColor;
   if (requestedColor) {

@@ -93,7 +93,6 @@ export default function TelefonlarPage() {
   const [newRam, setNewRam] = useState("8 GB");
   const [newStorage, setNewStorage] = useState("256 GB");
   const [newPrice, setNewPrice] = useState("");
-  const [newCustomerPrice, setNewCustomerPrice] = useState("");
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
 
   // Delete Confirm Modal State (Product & Variant)
@@ -240,7 +239,6 @@ export default function TelefonlarPage() {
     setNewRam("8 GB");
     setNewStorage("256 GB");
     setNewPrice("");
-    setNewCustomerPrice("");
     setEditingVariantIndex(null);
     setSelectedFile(null);
     setPreviewUrl(null);
@@ -271,7 +269,6 @@ export default function TelefonlarPage() {
     setNewRam("8 GB");
     setNewStorage("256 GB");
     setNewPrice("");
-    setNewCustomerPrice("");
     setEditingVariantIndex(null);
     setSelectedFile(null);
     setPreviewUrl(model.imageUrl || null);
@@ -291,11 +288,6 @@ export default function TelefonlarPage() {
       setFormError("Varyant için geçerli bir satış fiyatı giriniz (0'dan büyük olmalıdır).");
       return;
     }
-    const custPriceNum = newCustomerPrice ? Number(newCustomerPrice) : null;
-    if (custPriceNum !== null && (isNaN(custPriceNum) || custPriceNum < 0)) {
-      setFormError("Müşteri Vitrin Fiyatı geçerli bir sayı olmalıdır.");
-      return;
-    }
 
     if (editingVariantIndex !== null) {
       // Update existing variant
@@ -306,7 +298,6 @@ export default function TelefonlarPage() {
           ram: newRam,
           storage: newStorage,
           price: priceNum,
-          customerPrice: custPriceNum && custPriceNum > 0 ? custPriceNum : null,
         };
         return { ...prev, variants: next };
       });
@@ -328,7 +319,6 @@ export default function TelefonlarPage() {
             ram: newRam,
             storage: newStorage,
             price: priceNum,
-            customerPrice: custPriceNum && custPriceNum > 0 ? custPriceNum : null,
             isActive: true,
           },
         ],
@@ -336,7 +326,6 @@ export default function TelefonlarPage() {
     }
 
     setNewPrice("");
-    setNewCustomerPrice("");
   };
 
   // Prepare editing a variant inline
@@ -347,7 +336,6 @@ export default function TelefonlarPage() {
     setNewRam(target.ram);
     setNewStorage(target.storage);
     setNewPrice(String(target.price));
-    setNewCustomerPrice(target.customerPrice ? String(target.customerPrice) : "");
   };
 
   // Prompt Variant Delete Confirmation Modal
@@ -880,13 +868,13 @@ export default function TelefonlarPage() {
                 />
               </div>
 
-              {/* VARYANT YÖNETİM ALANI (RAM / HAFIZA / SATIŞ FİYATI / VITRİN FİYATI) */}
+              {/* VARYANT YÖNETİM ALANI (RAM / HAFIZA / SATIŞ FİYATI) */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4 text-emerald-600" />
                     <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                      RAM / Hafıza / Satış & Vitrin Fiyat Varyantları
+                      RAM / Hafıza / Satış Fiyat Varyantları
                     </span>
                   </div>
                   <span className="text-xs text-slate-500 font-medium">
@@ -914,19 +902,8 @@ export default function TelefonlarPage() {
                             {v.storage} Hafıza
                           </span>
                           <span className="text-slate-300">|</span>
-                          <span className="text-xs font-bold text-emerald-700" title="Yönetim/Finans Satış Fiyatı">
+                          <span className="text-xs font-bold text-emerald-700" title="Satış Fiyatı">
                             Satış: {formatCurrency(v.price)}
-                          </span>
-                          <span className="text-slate-300">|</span>
-                          <span
-                            className={`text-xs font-bold px-2 py-0.5 rounded ${
-                              v.customerPrice
-                                ? "bg-purple-50 text-purple-700 border border-purple-200"
-                                : "bg-slate-100 text-slate-600"
-                            }`}
-                            title="Müşteri Vitrin Fiyatı"
-                          >
-                            Vitrin: {v.customerPrice ? formatCurrency(v.customerPrice) : `${formatCurrency(v.price)} (Varsayılan)`}
                           </span>
                         </div>
 
@@ -958,7 +935,7 @@ export default function TelefonlarPage() {
                   <span className="text-xs font-bold text-slate-800 block">
                     {editingVariantIndex !== null ? "Varyantı Düzenle" : "+ Yeni Varyant Ekle"}
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-600 mb-1">RAM</label>
                       <select
@@ -992,7 +969,7 @@ export default function TelefonlarPage() {
 
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Satış Fiyatı (İç Finans) *
+                        Satış Fiyatı (TL) *
                       </label>
                       <input
                         type="number"
@@ -1000,19 +977,6 @@ export default function TelefonlarPage() {
                         value={newPrice}
                         onChange={(e) => setNewPrice(e.target.value)}
                         className="w-full py-2 px-3 rounded-lg border border-slate-300 text-xs font-medium"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Vitrin Fiyatı (Opsiyonel)
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="Örn: 56000 (Boşsa Satış)"
-                        value={newCustomerPrice}
-                        onChange={(e) => setNewCustomerPrice(e.target.value)}
-                        className="w-full py-2 px-3 rounded-lg border border-purple-200 bg-purple-50/40 text-xs font-medium focus:ring-2 focus:ring-purple-500"
                       />
                     </div>
                   </div>
@@ -1024,7 +988,6 @@ export default function TelefonlarPage() {
                         onClick={() => {
                           setEditingVariantIndex(null);
                           setNewPrice("");
-                          setNewCustomerPrice("");
                         }}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100"
                       >

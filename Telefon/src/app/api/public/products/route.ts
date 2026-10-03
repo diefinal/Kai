@@ -30,6 +30,7 @@ export async function GET(request: Request) {
       include: {
         variants: {
           where: { isActive: true },
+          include: { colorPrices: true },
           orderBy: [{ price: "asc" }],
         },
         devices: {
