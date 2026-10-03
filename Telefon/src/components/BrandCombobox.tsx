@@ -20,6 +20,7 @@ export function BrandCombobox({
 }: BrandComboboxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState(value);
+  const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // External sync if value changes (e.g. edit modal opened or form reset)
@@ -35,6 +36,7 @@ export function BrandCombobox({
         !containerRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
+        setIsFocused(false);
         const trimmed = query.trim();
         if (trimmed) {
           const exactMatch = availableBrands.find(
@@ -57,9 +59,10 @@ export function BrandCombobox({
   const filteredBrands = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
     const cleanVal = value.trim().toLowerCase();
-    if (!trimmed || trimmed === cleanVal) return availableBrands;
+    // If empty or if query equals canonical current value and user focused/opened dropdown, show all brands
+    if (!trimmed || (isFocused && trimmed === cleanVal)) return availableBrands;
     return availableBrands.filter((b) => b.toLowerCase().includes(trimmed));
-  }, [query, value, availableBrands]);
+  }, [query, value, availableBrands, isFocused]);
 
   // Check for exact case-insensitive match
   const exactMatch = useMemo(() => {
@@ -74,6 +77,7 @@ export function BrandCombobox({
     onChange(brand);
     setQuery(brand);
     setIsOpen(false);
+    setIsFocused(false);
   };
 
   return (
@@ -86,12 +90,12 @@ export function BrandCombobox({
           placeholder={placeholder}
           onFocus={(e) => {
             setIsOpen(true);
+            setIsFocused(true);
             e.target.select();
           }}
           onChange={(e) => {
             const nextQuery = e.target.value;
             setQuery(nextQuery);
-            // Check exact match while typing to preserve canonical casing if matched
             const trimmed = nextQuery.trim();
             const matched = availableBrands.find(
               (b) => b.toLowerCase() === trimmed.toLowerCase()
