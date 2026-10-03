@@ -120,7 +120,13 @@ export function resolveModelVariant(
       ? Number(model.basePrice)
       : 10000;
 
-    const rawCustomerPrice = v.customerPrice != null ? Number(v.customerPrice) : 0;
+    const parsePriceNumber = (val: unknown): number => {
+      if (val === null || val === undefined) return 0;
+      const parsed = Number(val);
+      return isNaN(parsed) ? 0 : parsed;
+    };
+
+    const rawCustomerPrice = parsePriceNumber(v.customerPrice);
     const showcasePrice = rawCustomerPrice > 0 ? rawCustomerPrice : internalSalePrice;
 
     return {
