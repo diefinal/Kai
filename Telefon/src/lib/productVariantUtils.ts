@@ -20,6 +20,7 @@ export interface PhoneModelWithVariantsAndDevices {
     ram: string;
     storage: string;
     price: unknown;
+    customerPrice?: unknown;
     isActive: boolean;
   }[];
   devices: {
@@ -38,6 +39,8 @@ export interface ResolvedVariantInfo {
   ram: string;
   storage: string;
   price: number;
+  customerPrice: number | null;
+  internalSalePrice: number;
   inStock: boolean;
   stockCount: number;
   colorsWithStock: ColorAvailabilityDTO[];
@@ -84,6 +87,7 @@ export function resolveModelVariant(
           ram: model.ram,
           storage: model.storage,
           price: model.basePrice,
+          customerPrice: null,
           isActive: true,
         },
       ];
@@ -108,7 +112,7 @@ export function resolveModelVariant(
       }
     }
 
-    const price = minDevicePrice > 0
+    const internalSalePrice = minDevicePrice > 0
       ? minDevicePrice
       : Number(v.price) > 0
       ? Number(v.price)
@@ -116,7 +120,18 @@ export function resolveModelVariant(
       ? Number(model.basePrice)
       : 10000;
 
-    return { variant: v, vDevices, hasStock, stockCount, price };
+    const rawCustomerPrice = v.customerPrice != null ? Number(v.customerPrice) : 0;
+    const showcasePrice = rawCustomerPrice > 0 ? rawCustomerPrice : internalSalePrice;
+
+    return {
+      variant: v,
+      vDevices,
+      hasStock,
+      stockCount,
+      price: showcasePrice,
+      internalSalePrice,
+      customerPrice: rawCustomerPrice > 0 ? rawCustomerPrice : null,
+    };
   };
 
   const evaluatedVariants = variantList.map(getVariantDetails);
@@ -204,6 +219,8 @@ export function resolveModelVariant(
     ram: selected.variant.ram,
     storage: selected.variant.storage,
     price: selected.price,
+    customerPrice: selected.customerPrice,
+    internalSalePrice: selected.internalSalePrice,
     inStock: selected.hasStock,
     stockCount: selected.stockCount,
     colorsWithStock,

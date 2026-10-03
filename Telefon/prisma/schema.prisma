@@ -1,0 +1,407 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+}
+
+enum DeviceStatus {
+  IN_STOCK
+  RESERVED
+  SOLD
+}
+
+enum CariType {
+  CUSTOMER
+  SUPPLIER
+  BOTH
+}
+
+enum PaymentType {
+  CASH
+  PARTIAL
+  INSTALLMENT
+}
+
+enum SaleStatus {
+  COMPLETED
+  CANCELLED
+}
+
+enum InstallmentStatus {
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+}
+
+enum TransactionType {
+  DEBIT  // Borç (Müşteri borçlanır / Tedarikçiye ödeme yapılarak borcumuz kapanır)
+  CREDIT // Alacak (Tedarikçi alacaklanır / Müşteriden tahsilat yapılarak borcu kapanır)
+}
+
+enum ReferenceType {
+  PURCHASE
+  SALE
+  PAYMENT
+  COLLECTION
+  CANCEL
+  MANUAL
+  LEAD_DEPOSIT
+  LEAD_REFUND
+}
+
+enum LeadStatus {
+  YENI
+  KAPORA_BEKLENIYOR
+  KAPORA_ALINDI
+  TEDARIKTE
+  TESLIME_HAZIR
+  SATISA_DONUSTU
+  VAZGECTI
+}
+
+enum DepositStatus {
+  PENDING
+  RECEIVED
+  REFUNDED
+  NOT_REFUNDED
+}
+
+enum PaymentFlow {
+  INCOMING // Müşteriden Tahsilat (Kasaya giriş)
+  OUTGOING // Tedarikçiye Ödeme (Kasadan çıkış)
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CREDIT_CARD
+}
+
+model User {
+  id           String    @id @default(uuid())
+  username     String    @unique
+  email        String    @unique
+  passwordHash String
+  fullName     String?
+  role         UserRole  @default(ADMIN)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model PhoneModel {
+  id          String              @id @default(uuid())
+  brand       String
+  modelName   String
+  ram         String              @default("8 GB")
+  storage     String              @default("128 GB")
+  color       String              @default("Siyah")
+  description String?
+  imageUrl    String?
+  colorImages Json?
+  specs       Json?
+  basePrice   Decimal             @default(0.00) @db.Decimal(12, 2)
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  devices    Device[]
+  ads        Ad[]
+  salesLeads SalesLead[]
+  variants   PhoneModelVariant[]
+
+  @@unique([brand, modelName, ram, storage, color])
+  @@index([isActive, brand])
+  @@map("phone_models")
+}
+
+model PhoneModelVariant {
+  id            String     @id @default(uuid())
+  phoneModelId  String
+  ram           String
+  storage       String
+  price         Decimal    @db.Decimal(12, 2)
+  customerPrice Decimal?   @db.Decimal(12, 2)
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  phoneModel   PhoneModel @relation(fields: [phoneModelId], references: [id], onDelete: Cascade)
+  devices      Device[]
+
+  @@unique([phoneModelId, ram, storage])
+  @@index([phoneModelId])
+  @@map("phone_model_variants")
+}
+
+model Device {
+  id            String             @id @default(uuid())
+  modelId       String
+  variantId     String?
+  ram           String             @default("8 GB")
+  storage       String             @default("128 GB")
+  color         String             @default("Siyah")
+  imei          String?            @unique
+  purchasePrice Decimal            @db.Decimal(12, 2)
+  salePrice     Decimal            @db.Decimal(12, 2)
+  supplierId    String
+  purchaseDate  DateTime           @default(now())
+  status        DeviceStatus       @default(IN_STOCK)
+  notes         String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  model     PhoneModel         @relation(fields: [modelId], references: [id], onDelete: Restrict)
+  variant   PhoneModelVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  supplier  Cari               @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  saleItem  SaleItem?
+  salesLead SalesLead?
+
+  @@index([status])
+  @@index([modelId])
+  @@index([variantId])
+  @@index([status, modelId])
+  @@map("devices")
+}
+
+model Cari {
+  id             String   @id @default(uuid())
+  name           String
+  phone          String?
+  email          String?
+  address        String?
+  type           CariType @default(CUSTOMER)
+  currentBalance Decimal  @default(0.00) @db.Decimal(12, 2) // Pozitif: Alacağımız, Negatif: Borcumuz
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  suppliedDevices Device[]
+  sales           Sale[]
+  transactions    CariTransaction[]
+  payments        Payment[]
+  salesLeads      SalesLead[]
+
+  @@index([type, name])
+  @@map("cariler")
+}
+
+model Sale {
+  id              String      @id @default(uuid())
+  saleNumber      String      @unique
+  customerId      String
+  saleDate        DateTime    @default(now())
+  totalAmount     Decimal     @db.Decimal(12, 2)
+  totalProfit     Decimal     @db.Decimal(12, 2)
+  paidAmount      Decimal     @default(0.00) @db.Decimal(12, 2)
+  remainingAmount Decimal     @default(0.00) @db.Decimal(12, 2)
+  paymentType     PaymentType @default(CASH)
+  status          SaleStatus  @default(COMPLETED)
+  notes           String?
+  cancelledAt     DateTime?
+  cancelReason    String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  customer     Cari        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  items        SaleItem[]
+  installments Installment[]
+  payments     Payment[]
+  salesLead    SalesLead?
+
+  @@index([status, saleDate])
+  @@map("sales")
+}
+
+model SaleItem {
+  id                    String   @id @default(uuid())
+  saleId                String
+  deviceId              String   @unique
+  purchasePriceSnapshot Decimal  @db.Decimal(12, 2)
+  soldPrice             Decimal  @db.Decimal(12, 2)
+  profit                Decimal  @db.Decimal(12, 2)
+  createdAt             DateTime @default(now())
+
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+
+  @@index([saleId])
+  @@map("sale_items")
+}
+
+model Installment {
+  id                String            @id @default(uuid())
+  saleId            String
+  installmentNumber Int
+  amount            Decimal           @db.Decimal(12, 2)
+  dueDate           DateTime
+  paidAmount        Decimal           @default(0.00) @db.Decimal(12, 2)
+  status            InstallmentStatus @default(PENDING)
+  paidDate          DateTime?
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  sale     Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([status, dueDate])
+  @@map("installments")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  cariId        String
+  saleId        String?
+  installmentId String?
+  type          PaymentFlow   // INCOMING: Tahsilat, OUTGOING: Tedarikçiye Ödeme
+  amount        Decimal       @db.Decimal(12, 2)
+  method        PaymentMethod @default(CASH)
+  date          DateTime      @default(now())
+  description   String?
+  reference     String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  cari        Cari         @relation(fields: [cariId], references: [id], onDelete: Restrict)
+  sale        Sale?        @relation(fields: [saleId], references: [id], onDelete: SetNull)
+  installment Installment? @relation(fields: [installmentId], references: [id], onDelete: SetNull)
+
+  depositLead SalesLead? @relation("LeadDepositPayment")
+  refundLead  SalesLead? @relation("LeadRefundPayment")
+
+  @@index([cariId])
+  @@index([saleId])
+  @@index([installmentId])
+  @@index([date])
+  @@map("payments")
+}
+
+model CariTransaction {
+  id            String          @id @default(uuid())
+  cariId        String
+  type          TransactionType // DEBIT (Borç), CREDIT (Alacak)
+  amount        Decimal         @db.Decimal(12, 2)
+  description   String
+  date          DateTime        @default(now())
+  referenceType ReferenceType
+  referenceId   String?
+  createdAt     DateTime        @default(now())
+
+  cari Cari @relation(fields: [cariId], references: [id], onDelete: Cascade)
+
+  @@index([cariId])
+  @@index([date])
+  @@map("cari_transactions")
+}
+
+model SalesLead {
+  id                String        @id @default(uuid())
+  leadNumber        String        @unique
+  customerName      String
+  customerPhone     String
+  notes             String?
+
+  brand             String
+  modelName         String
+  ram               String
+  storage           String
+  color             String
+  snapshotPrice     Decimal       @db.Decimal(12, 2)
+  snapshotStock     Boolean       @default(false)
+
+  status            LeadStatus    @default(YENI)
+
+  depositAmount     Decimal       @default(0.00) @db.Decimal(12, 2)
+  depositStatus     DepositStatus @default(PENDING)
+  depositMethod     PaymentMethod?
+  depositDate       DateTime?
+  depositNotes      String?
+  depositRecordedBy String?
+
+  refundAmount      Decimal?      @db.Decimal(12, 2)
+  refundDate        DateTime?
+  refundMethod      PaymentMethod?
+  refundNotes       String?
+
+  phoneModelId      String?
+  phoneModel        PhoneModel?   @relation(fields: [phoneModelId], references: [id], onDelete: SetNull)
+
+  deviceId          String?       @unique
+  device            Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  customerId        String?
+  customer          Cari?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  saleId            String?       @unique
+  sale              Sale?         @relation(fields: [saleId], references: [id], onDelete: SetNull)
+
+  depositPaymentId  String?       @unique
+  depositPayment    Payment?      @relation("LeadDepositPayment", fields: [depositPaymentId], references: [id], onDelete: SetNull)
+
+  refundPaymentId   String?       @unique
+  refundPayment     Payment?      @relation("LeadRefundPayment", fields: [refundPaymentId], references: [id], onDelete: SetNull)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([status])
+  @@index([customerPhone])
+  @@index([phoneModelId, status])
+  @@map("sales_leads")
+}
+
+enum AdPosition {
+  HERO_SLIDER
+  IN_FEED
+}
+
+enum AdDisplayType {
+  IMAGE_ONLY
+  IMAGE_AND_TEXT
+}
+
+model Ad {
+  id           String        @id @default(uuid())
+  title        String
+  description  String?
+  imageUrl     String?
+  phoneModelId String?
+  targetRam    String?
+  targetStorage String?
+  buttonText   String        @default("İncele")
+  startDate    DateTime      @default(now())
+  endDate      DateTime?
+  isActive     Boolean       @default(true)
+  position     AdPosition    @default(HERO_SLIDER)
+  displayType  AdDisplayType @default(IMAGE_AND_TEXT)
+  order        Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  phoneModel PhoneModel? @relation(fields: [phoneModelId], references: [id], onDelete: SetNull)
+
+  @@index([position, isActive])
+  @@index([startDate, endDate])
+  @@map("ads")
+}
+
+model SystemSetting {
+  key       String   @id
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+

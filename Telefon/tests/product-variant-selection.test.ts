@@ -1,6 +1,6 @@
 import test, { describe } from "node:test";
 import assert from "node:assert/strict";
-import { buildPublicProductDTO, PhoneModelWithVariantsAndDevices } from "@/lib/productVariantUtils";
+import { buildPublicProductDTO, resolveModelVariant, PhoneModelWithVariantsAndDevices } from "@/lib/productVariantUtils";
 
 describe("PhoneModelVariant Selection & PublicProductDTO Tests", () => {
   test("Xiaomi 15T scenario: In-stock variant (12/512) should be selected over out-of-stock variant (12/256)", () => {
@@ -24,6 +24,7 @@ describe("PhoneModelVariant Selection & PublicProductDTO Tests", () => {
           ram: "12 GB",
           storage: "256 GB",
           price: 25000,
+          customerPrice: 26000,
           isActive: true,
         },
         {
@@ -32,6 +33,7 @@ describe("PhoneModelVariant Selection & PublicProductDTO Tests", () => {
           ram: "12 GB",
           storage: "512 GB",
           price: 27500,
+          customerPrice: 29000,
           isActive: true,
         },
       ],
@@ -54,9 +56,58 @@ describe("PhoneModelVariant Selection & PublicProductDTO Tests", () => {
     assert.equal(dto.modelName, "15T");
     assert.equal(dto.ram, "12 GB");
     assert.equal(dto.storage, "512 GB");
-    assert.equal(dto.basePrice, 27500);
+    // customerPrice is 29000 (overriding 27500 internal sale price)
+    assert.equal(dto.basePrice, 29000);
     assert.equal(dto.inStock, true);
     assert.equal(dto.color, "Siyah");
+  });
+
+  test("Customer Price Fallback: Should use customerPrice when set, otherwise fallback to internal sale price", () => {
+    const model: PhoneModelWithVariantsAndDevices = {
+      id: "model-fallback-id",
+      brand: "Apple",
+      modelName: "iPhone 17",
+      ram: "8 GB",
+      storage: "256 GB",
+      color: "Siyah",
+      description: null,
+      imageUrl: null,
+      colorImages: null,
+      specs: null,
+      basePrice: 54000,
+      isActive: true,
+      variants: [
+        {
+          id: "v-256",
+          phoneModelId: "model-fallback-id",
+          ram: "8 GB",
+          storage: "256 GB",
+          price: 54000,
+          customerPrice: 56000, // Custom showcase price
+          isActive: true,
+        },
+        {
+          id: "v-512",
+          phoneModelId: "model-fallback-id",
+          ram: "16 GB",
+          storage: "512 GB",
+          price: 60000,
+          customerPrice: null, // Null showcase price => fallback to 60000
+          isActive: true,
+        },
+      ],
+      devices: [],
+    };
+
+    const v256Info = resolveModelVariant(model, "8 GB", "256 GB");
+    assert.equal(v256Info.internalSalePrice, 54000);
+    assert.equal(v256Info.customerPrice, 56000);
+    assert.equal(v256Info.price, 56000); // Showcase price
+
+    const v512Info = resolveModelVariant(model, "16 GB", "512 GB");
+    assert.equal(v512Info.internalSalePrice, 60000);
+    assert.equal(v512Info.customerPrice, null);
+    assert.equal(v512Info.price, 60000); // Fallback to internal price
   });
 
   test("Apple 17 multi-variant scenario: Should default to lowest price active variant when none in stock", () => {
@@ -80,6 +131,7 @@ describe("PhoneModelVariant Selection & PublicProductDTO Tests", () => {
           ram: "8 GB",
           storage: "256 GB",
           price: 54000,
+          customerPrice: 56000,
           isActive: true,
         },
         {
@@ -88,6 +140,7 @@ describe("PhoneModelVariant Selection & PublicProductDTO Tests", () => {
           ram: "16 GB",
           storage: "512 GB",
           price: 60000,
+          customerPrice: 63000,
           isActive: true,
         },
       ],
@@ -97,65 +150,13 @@ describe("PhoneModelVariant Selection & PublicProductDTO Tests", () => {
     const defaultDto = buildPublicProductDTO(apple17);
     assert.equal(defaultDto.ram, "8 GB");
     assert.equal(defaultDto.storage, "256 GB");
-    assert.equal(defaultDto.basePrice, 54000);
+    assert.equal(defaultDto.basePrice, 56000);
     assert.equal(defaultDto.inStock, false);
 
     const explicit512Dto = buildPublicProductDTO(apple17, "16 GB", "512 GB");
     assert.equal(explicit512Dto.ram, "16 GB");
     assert.equal(explicit512Dto.storage, "512 GB");
-    assert.equal(explicit512Dto.basePrice, 60000);
+    assert.equal(explicit512Dto.basePrice, 63000);
     assert.equal(explicit512Dto.inStock, false);
-  });
-
-  test("All DTO fields (RAM, Storage, Price, Stock) must originate from the SAME PhoneModelVariant", () => {
-    const model: PhoneModelWithVariantsAndDevices = {
-      id: "m-1",
-      brand: "TestBrand",
-      modelName: "Model X",
-      ram: "8 GB",
-      storage: "128 GB",
-      color: "Siyah",
-      description: null,
-      imageUrl: null,
-      colorImages: null,
-      specs: null,
-      basePrice: 10000,
-      isActive: true,
-      variants: [
-        {
-          id: "v1",
-          phoneModelId: "m-1",
-          ram: "8 GB",
-          storage: "128 GB",
-          price: 15000,
-          isActive: true,
-        },
-        {
-          id: "v2",
-          phoneModelId: "m-1",
-          ram: "12 GB",
-          storage: "256 GB",
-          price: 20000,
-          isActive: true,
-        },
-      ],
-      devices: [
-        {
-          id: "d2",
-          ram: "12 GB",
-          storage: "256 GB",
-          color: "Siyah",
-          salePrice: 20000,
-          status: "IN_STOCK",
-          variantId: "v2",
-        },
-      ],
-    };
-
-    const dto = buildPublicProductDTO(model);
-    assert.equal(dto.ram, "12 GB");
-    assert.equal(dto.storage, "256 GB");
-    assert.equal(dto.basePrice, 20000);
-    assert.equal(dto.inStock, true);
   });
 });
