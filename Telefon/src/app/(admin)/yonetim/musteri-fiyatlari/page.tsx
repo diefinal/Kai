@@ -417,6 +417,17 @@ export default function MusteriFiyatlariPage() {
             </select>
           </div>
 
+          {/* Renk Filter */}
+          <div>
+            <input
+              type="text"
+              placeholder="Renk filtrele..."
+              value={colorFilter}
+              onChange={(e) => setColorFilter(e.target.value)}
+              className="w-full py-2 px-3 rounded-xl border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
+            />
+          </div>
+
           {/* Stok Filtresi */}
           <div className="flex items-center">
             <label className="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-slate-700">
