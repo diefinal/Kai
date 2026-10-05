@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import {
-  Database,
   Smartphone,
   ListOrdered,
   ArrowUp,
@@ -15,8 +14,12 @@ import {
   RotateCcw,
   Loader2,
   Package,
+  Sparkles,
+  Plus,
+  Trash2,
+  Search,
+  X,
 } from "lucide-react";
-import { APP_CONFIG } from "@/lib/constants";
 
 interface PhoneModelItem {
   id: string;
@@ -27,6 +30,7 @@ interface PhoneModelItem {
   color?: string;
   imageUrl?: string | null;
   basePrice?: number;
+  inStock?: boolean;
 }
 
 export default function AyarlarPage() {
@@ -45,6 +49,18 @@ export default function AyarlarPage() {
   const [productSuccessMessage, setProductSuccessMessage] = useState<string | null>(null);
   const [productErrorMessage, setProductErrorMessage] = useState<string | null>(null);
   const [productDraggedIndex, setProductDraggedIndex] = useState<number | null>(null);
+
+  // --- Featured Products State ---
+  const [featuredEnabled, setFeaturedEnabled] = useState(true);
+  const [featuredModels, setFeaturedModels] = useState<PhoneModelItem[]>([]);
+  const [allModels, setAllModels] = useState<PhoneModelItem[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [featuredSaving, setFeaturedSaving] = useState(false);
+  const [featuredSuccessMessage, setFeaturedSuccessMessage] = useState<string | null>(null);
+  const [featuredErrorMessage, setFeaturedErrorMessage] = useState<string | null>(null);
+  const [featuredDraggedIndex, setFeaturedDraggedIndex] = useState<number | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addSearchQuery, setAddSearchQuery] = useState("");
 
   // Fetch initial brand order from API
   const fetchBrandOrder = useCallback(async () => {
@@ -86,10 +102,37 @@ export default function AyarlarPage() {
     }
   }, []);
 
+  // Fetch initial featured products settings from API
+  const fetchFeaturedSettings = useCallback(async () => {
+    try {
+      setFeaturedLoading(true);
+      setFeaturedErrorMessage(null);
+      const res = await fetch("/api/admin/settings/featured-products");
+      const json = await res.json();
+      if (json.success && json.data) {
+        setFeaturedEnabled(Boolean(json.data.enabled));
+        if (Array.isArray(json.data.featuredModels)) {
+          setFeaturedModels(json.data.featuredModels);
+        }
+        if (Array.isArray(json.data.allModels)) {
+          setAllModels(json.data.allModels);
+        }
+      } else {
+        setFeaturedErrorMessage(json.error || "Öne çıkan ürün ayarları alınamadı.");
+      }
+    } catch (err) {
+      console.error("Featured products fetch error:", err);
+      setFeaturedErrorMessage("Sunucu ile bağlantı kurulamadı.");
+    } finally {
+      setFeaturedLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchBrandOrder();
     fetchProductOrder();
-  }, [fetchBrandOrder, fetchProductOrder]);
+    fetchFeaturedSettings();
+  }, [fetchBrandOrder, fetchProductOrder, fetchFeaturedSettings]);
 
   // Brand move up / down
   const moveUp = (index: number) => {
@@ -246,6 +289,102 @@ export default function AyarlarPage() {
     setModels(sorted);
   };
 
+  // --- Featured Products Handlers ---
+  const moveFeaturedUp = (index: number) => {
+    if (index === 0) return;
+    const updated = [...featuredModels];
+    const temp = updated[index - 1];
+    updated[index - 1] = updated[index];
+    updated[index] = temp;
+    setFeaturedModels(updated);
+  };
+
+  const moveFeaturedDown = (index: number) => {
+    if (index === featuredModels.length - 1) return;
+    const updated = [...featuredModels];
+    const temp = updated[index + 1];
+    updated[index + 1] = updated[index];
+    updated[index] = temp;
+    setFeaturedModels(updated);
+  };
+
+  const handleFeaturedDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    setFeaturedDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleFeaturedDragOver = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault();
+    if (featuredDraggedIndex === null || featuredDraggedIndex === index) return;
+    const updated = [...featuredModels];
+    const draggedItem = updated[featuredDraggedIndex];
+    updated.splice(featuredDraggedIndex, 1);
+    updated.splice(index, 0, draggedItem);
+    setFeaturedDraggedIndex(index);
+    setFeaturedModels(updated);
+  };
+
+  const handleFeaturedDragEnd = () => {
+    setFeaturedDraggedIndex(null);
+  };
+
+  const handleAddFeaturedProduct = (model: PhoneModelItem) => {
+    if (featuredModels.some((m) => m.id === model.id)) return;
+    setFeaturedModels((prev) => [...prev, model]);
+  };
+
+  const handleRemoveFeaturedProduct = (id: string) => {
+    setFeaturedModels((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const handleSaveFeaturedSettings = async () => {
+    try {
+      setFeaturedSaving(true);
+      setFeaturedSuccessMessage(null);
+      setFeaturedErrorMessage(null);
+
+      const featuredProductOrder = featuredModels.map((m) => m.id);
+
+      const res = await fetch("/api/admin/settings/featured-products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          enabled: featuredEnabled,
+          featuredProductOrder,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        setFeaturedSuccessMessage("Öne çıkan ürün ayarları başarıyla kaydedildi.");
+        setTimeout(() => setFeaturedSuccessMessage(null), 4000);
+      } else {
+        setFeaturedErrorMessage(json.error || "Öne çıkan ürün ayarları kaydedilemedi.");
+      }
+    } catch (err) {
+      console.error("Save featured settings error:", err);
+      setFeaturedErrorMessage("Kaydetme sırasında bir hata oluştu.");
+    } finally {
+      setFeaturedSaving(false);
+    }
+  };
+
+  // Filter available models for add modal search
+  const availableToAddModels = useMemo(() => {
+    const featuredIdSet = new Set(featuredModels.map((m) => m.id));
+    const unselected = allModels.filter((m) => !featuredIdSet.has(m.id));
+
+    if (!addSearchQuery.trim()) return unselected;
+    const q = addSearchQuery.trim().toLowerCase();
+    return unselected.filter(
+      (m) =>
+        m.brand.toLowerCase().includes(q) ||
+        m.modelName.toLowerCase().includes(q) ||
+        m.ram.toLowerCase().includes(q) ||
+        m.storage.toLowerCase().includes(q)
+    );
+  }, [allModels, featuredModels, addSearchQuery]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -257,6 +396,302 @@ export default function AyarlarPage() {
           Uygulama konfigürasyonu, vitrin düzenlemesi ve sistem parametreleri.
         </p>
       </div>
+
+      {/* --- Müşteri Vitrini Öne Çıkan Ürünler (YENİ BÖLÜM) --- */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-bold text-slate-900 text-lg">Öne Çıkan Ürünler Yönetimi</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Müşteri vitrininde (teknoreha.com) üst kısımda yer alan &quot;Öne Çıkanlar&quot; alanının görünürlüğünü ve ürün sırasını yönetin.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              disabled={featuredLoading || featuredSaving}
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 disabled:opacity-50 transition flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4 text-emerald-600" />
+              <span>Öne Çıkan Ürün Ekle</span>
+            </button>
+
+            <button
+              onClick={handleSaveFeaturedSettings}
+              disabled={featuredLoading || featuredSaving}
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-sm flex items-center gap-2 disabled:opacity-50"
+            >
+              {featuredSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Kaydediliyor...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Kaydet</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Visibility Toggle Checkbox */}
+        <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+          <input
+            type="checkbox"
+            id="featured_enabled_toggle"
+            checked={featuredEnabled}
+            onChange={(e) => setFeaturedEnabled(e.target.checked)}
+            className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+          />
+          <label
+            htmlFor="featured_enabled_toggle"
+            className="text-sm font-bold text-slate-900 cursor-pointer select-none"
+          >
+            [✓] Öne Çıkanlar bölümünü müşteri vitrininde göster
+          </label>
+        </div>
+
+        {/* Notifications */}
+        {featuredSuccessMessage && (
+          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{featuredSuccessMessage}</span>
+          </div>
+        )}
+
+        {featuredErrorMessage && (
+          <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <span>{featuredErrorMessage}</span>
+          </div>
+        )}
+
+        {/* Featured Models List */}
+        {featuredLoading ? (
+          <div className="space-y-2 py-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : featuredModels.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 text-sm bg-slate-50 rounded-xl border border-slate-200/60 space-y-2">
+            <p>Seçilmiş öne çıkan ürün bulunmamaktadır.</p>
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+            >
+              <Plus className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Ürün Ekle</span>
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-slate-400 px-1 pb-1 flex justify-between items-center">
+              <span>Sıralamayı değiştirmek için sürükleyin veya ↑ ↓ butonlarını kullanın.</span>
+              <span>Toplam {featuredModels.length} öne çıkan model</span>
+            </div>
+
+            {featuredModels.map((model, idx) => {
+              const isFirst = idx === 0;
+              const isLast = idx === featuredModels.length - 1;
+              const isDragging = featuredDraggedIndex === idx;
+
+              return (
+                <div
+                  key={model.id}
+                  draggable
+                  onDragStart={(e) => handleFeaturedDragStart(e, idx)}
+                  onDragOver={(e) => handleFeaturedDragOver(e, idx)}
+                  onDragEnd={handleFeaturedDragEnd}
+                  className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                    isDragging
+                      ? "bg-emerald-50 border-emerald-300 shadow-md opacity-60 scale-[1.01]"
+                      : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-slate-600 rounded shrink-0">
+                      <GripVertical className="w-4 h-4" />
+                    </div>
+
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 font-extrabold text-xs flex items-center justify-center border border-slate-200/80 shrink-0">
+                      {idx + 1}
+                    </span>
+
+                    {model.imageUrl ? (
+                      <div className="w-9 h-9 rounded-lg bg-slate-100 relative overflow-hidden border border-slate-200 shrink-0">
+                        <Image
+                          src={model.imageUrl}
+                          alt={model.modelName}
+                          fill
+                          className="object-contain p-0.5"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
+                        <Smartphone className="w-4 h-4" />
+                      </div>
+                    )}
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-emerald-600 uppercase">
+                          {model.brand}
+                        </span>
+                        <span className="text-sm font-bold text-slate-900 truncate">
+                          {model.modelName}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>
+                          {model.ram} / {model.storage}
+                        </span>
+                        <span>•</span>
+                        <span
+                          className={`font-semibold ${
+                            model.inStock ? "text-emerald-600" : "text-amber-600"
+                          }`}
+                        >
+                          {model.inStock ? "Stokta Var" : "3 Gün İçinde Teslim"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0 ml-2">
+                    <button
+                      onClick={() => moveFeaturedUp(idx)}
+                      disabled={isFirst}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition"
+                      title="Yukarı Taşı"
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() => moveFeaturedDown(idx)}
+                      disabled={isLast}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition"
+                      title="Aşağı Taşı"
+                    >
+                      <ArrowDown className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() => handleRemoveFeaturedProduct(model.id)}
+                      className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition ml-1"
+                      title="Öne Çıkanlardan Kaldır"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* --- Add Featured Product Modal --- */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-slate-900 dark:text-white text-base sm:text-lg">
+                  Öne Çıkan Ürün Ekle
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative shrink-0">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Marka veya model ismi ara (ör. Xiaomi 17, Apple 17)..."
+                value={addSearchQuery}
+                onChange={(e) => setAddSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 border border-slate-200 dark:border-slate-700"
+              />
+            </div>
+
+            {/* Product List Scrollable */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar min-h-[200px]">
+              {availableToAddModels.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-xs">
+                  {addSearchQuery ? "Aramaya uygun eklenebilir model bulunamadı." : "Eklenebilir tüm aktif modeller zaten seçilmiş durumda."}
+                </div>
+              ) : (
+                availableToAddModels.map((m: PhoneModelItem) => (
+                  <div
+                    key={m.id}
+                    className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 transition"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {m.imageUrl ? (
+                        <div className="w-9 h-9 rounded-lg bg-slate-100 relative overflow-hidden border border-slate-200 shrink-0">
+                          <Image src={m.imageUrl} alt={m.modelName} fill className="object-contain p-0.5" />
+                        </div>
+                      ) : (
+                        <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
+                          <Smartphone className="w-4 h-4" />
+                        </div>
+                      )}
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-emerald-600 uppercase">{m.brand}</span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{m.modelName}</span>
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          {m.ram} / {m.storage} • {m.inStock ? "Stokta Var" : "3 Gün İçinde Teslim"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        handleAddFeaturedProduct(m);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1 shrink-0 ml-2"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Ekle</span>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end shrink-0">
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 transition"
+              >
+                Tamam
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Müşteri Vitrini Marka Sıralaması */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-5">
@@ -457,7 +892,7 @@ export default function AyarlarPage() {
         {productLoading ? (
           <div className="space-y-2 py-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-16 bg-slate-100 rounded-xl animate-pulse" />
+              <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : models.length === 0 ? (
@@ -465,9 +900,10 @@ export default function AyarlarPage() {
             Sistemde aktif tanımlı telefon modeli bulunamadı.
           </div>
         ) : (
-          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-            <div className="text-xs font-semibold text-slate-400 px-1 pb-1">
-              Ürünleri sürükleyerek veya ↑ ↓ butonlarıyla istediğiniz pozisyona getirebilirsiniz.
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-slate-400 px-1 pb-1 flex justify-between items-center">
+              <span>Ürünleri sürükleyerek veya ↑ ↓ butonlarıyla istediğiniz pozisyona getirebilirsiniz.</span>
+              <span>Toplam {models.length} model</span>
             </div>
 
             {models.map((model, idx) => {
@@ -497,31 +933,33 @@ export default function AyarlarPage() {
                       {idx + 1}
                     </span>
 
-                    {/* Small Product Thumbnail */}
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200/80 flex items-center justify-center overflow-hidden shrink-0 relative">
-                      {model.imageUrl ? (
+                    {model.imageUrl ? (
+                      <div className="w-9 h-9 rounded-lg bg-slate-100 relative overflow-hidden border border-slate-200 shrink-0">
                         <Image
                           src={model.imageUrl}
                           alt={model.modelName}
                           fill
-                          sizes="40px"
-                          className="object-contain p-1"
+                          className="object-contain p-0.5"
                         />
-                      ) : (
-                        <Smartphone className="w-5 h-5 text-slate-400" />
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
+                        <Smartphone className="w-4 h-4" />
+                      </div>
+                    )}
 
-                    <div className="min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[11px] font-bold border border-purple-200/60 shrink-0 self-start sm:self-auto">
-                        {model.brand}
-                      </span>
-                      <span className="text-sm font-bold text-slate-900 truncate">
-                        {model.modelName}
-                      </span>
-                      <span className="text-xs text-slate-500 font-medium">
-                        ({model.ram} • {model.storage})
-                      </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-blue-600 uppercase">
+                          {model.brand}
+                        </span>
+                        <span className="text-sm font-bold text-slate-900 truncate">
+                          {model.modelName}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {model.ram} / {model.storage}
+                      </div>
                     </div>
                   </div>
 
@@ -549,61 +987,6 @@ export default function AyarlarPage() {
             })}
           </div>
         )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Genel Bilgiler */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <Smartphone className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-slate-900">Uygulama Bilgileri</h2>
-              <p className="text-xs text-slate-400">Temel sistem tanımları</p>
-            </div>
-          </div>
-          <div className="space-y-3 pt-2 text-sm">
-            <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500">Uygulama Adı</span>
-              <span className="font-medium text-slate-900">{APP_CONFIG.name}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500">Sürüm</span>
-              <span className="font-medium text-slate-900">v0.1.0</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Güvenlik & Veritabanı */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <Database className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-slate-900">Altyapı & Güvenlik</h2>
-              <p className="text-xs text-slate-400">Bağlantı ve oturum durumu</p>
-            </div>
-          </div>
-          <div className="space-y-3 pt-2 text-sm">
-            <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500">Veritabanı Motoru</span>
-              <span className="font-medium text-emerald-600 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                PostgreSQL (Supabase)
-              </span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500">Oturum Koruması</span>
-              <span className="font-medium text-slate-900">JWT (Jose / HS256)</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="text-slate-500">Şifreleme Standardı</span>
-              <span className="font-medium text-slate-900">Bcrypt (10 Salt Round)</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -48,15 +48,24 @@ export async function GET(request: Request) {
       },
     });
 
+    const activeModelIdMap = new Map<string, typeof activeModels[0]>();
+    activeModels.forEach((m) => {
+      activeModelIdMap.set(m.id, m);
+    });
+
     // 2. Build PublicProductDTO based strictly on PhoneModelVariant architecture
     const products: PublicProductDTO[] = activeModels.map((m) => buildPublicProductDTO(m));
 
-    // 3. Fetch custom product order & brand order settings from DB
-    const [productOrderSetting, brandOrderSetting] = await Promise.all([
-      prisma.systemSetting.findUnique({ where: { key: "product_order" } }),
-      prisma.systemSetting.findUnique({ where: { key: "brand_order" } }),
-    ]);
+    // 3. Fetch custom settings from DB (product order, brand order, featured settings)
+    const [productOrderSetting, brandOrderSetting, featuredEnabledSetting, featuredOrderSetting] =
+      await Promise.all([
+        prisma.systemSetting.findUnique({ where: { key: "product_order" } }),
+        prisma.systemSetting.findUnique({ where: { key: "brand_order" } }),
+        prisma.systemSetting.findUnique({ where: { key: "featured_products_enabled" } }),
+        prisma.systemSetting.findUnique({ where: { key: "featured_product_order" } }),
+      ]);
 
+    // Parse product rank map
     const productRankMap = new Map<string, number>();
     if (productOrderSetting && Array.isArray(productOrderSetting.value)) {
       (productOrderSetting.value as string[]).forEach((idOrKey, idx) => {
@@ -66,6 +75,7 @@ export async function GET(request: Request) {
       });
     }
 
+    // Parse brand rank map
     const brandRankMap = new Map<string, number>();
     if (brandOrderSetting && Array.isArray(brandOrderSetting.value)) {
       (brandOrderSetting.value as string[]).forEach((b, idx) => {
@@ -75,7 +85,27 @@ export async function GET(request: Request) {
       });
     }
 
-    // Sort by custom product rank, then brand rank, then brand & modelName
+    // Parse featured products settings
+    const featuredEnabled = featuredEnabledSetting ? Boolean(featuredEnabledSetting.value) : true;
+    let featuredOrder: string[] = [];
+    if (featuredOrderSetting && Array.isArray(featuredOrderSetting.value)) {
+      featuredOrder = featuredOrderSetting.value as string[];
+    }
+
+    // Resolve featured products in exact order specified by admin
+    const featuredProducts: PublicProductDTO[] = [];
+    if (featuredEnabled && featuredOrder.length > 0) {
+      const processedFeaturedIds = new Set<string>();
+      featuredOrder.forEach((id) => {
+        const model = activeModelIdMap.get(id);
+        if (model && !processedFeaturedIds.has(model.id)) {
+          featuredProducts.push(buildPublicProductDTO(model));
+          processedFeaturedIds.add(model.id);
+        }
+      });
+    }
+
+    // Sort catalog by custom product rank, then brand rank, then brand & modelName
     products.sort((a, b) => {
       const lowerIdA = a.id.toLowerCase();
       const lowerIdB = b.id.toLowerCase();
@@ -119,6 +149,8 @@ export async function GET(request: Request) {
       {
         success: true,
         data: products,
+        featuredProducts,
+        featuredEnabled,
       },
       {
         headers: {

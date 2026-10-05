@@ -1,0 +1,6 @@
+windows-app
+tests
+.git
+.env
+.env.local
+*.zip

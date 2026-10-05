@@ -13,7 +13,7 @@ export function MusteriFooter() {
         {/* Logo */}
         <Link href="/musteri" className="mb-3">
           <Image
-            src="/teknoreha-logo.png"
+            src="/teknoreha-logo-v2.png"
             alt="TeknoReha"
             width={160}
             height={45}
@@ -23,7 +23,7 @@ export function MusteriFooter() {
 
         {/* Tagline */}
         <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
-          Yurt Dışı Telefon Satışı & TeknoReha Online Vitrin
+          TeknoReha Online Vitrin
         </p>
 
         <p className="text-xs text-slate-400 dark:text-slate-500">

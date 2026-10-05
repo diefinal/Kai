@@ -7,6 +7,7 @@ import { ProductCard } from "./ProductCard";
 
 interface FeaturedProductsSectionProps {
   products: PublicProductDTO[];
+  enabled?: boolean;
   onScrollToAll?: () => void;
   onOpenSpecs?: (
     product: PublicProductDTO,
@@ -27,19 +28,17 @@ interface FeaturedProductsSectionProps {
 
 export function FeaturedProductsSection({
   products,
+  enabled = true,
   onScrollToAll,
   onOpenSpecs,
   onOpenDetail,
   comparedProducts = [],
   onToggleCompare,
 }: FeaturedProductsSectionProps) {
-  if (!products || products.length === 0) return null;
-
-  // Filter top featured products: strictly IN_STOCK products only, limit to max 8 items
-  const featured = products.filter((p) => p.inStock).slice(0, 8);
-
-  // If there are no IN_STOCK products, hide the section completely (no empty space or empty carousel)
-  if (featured.length === 0) return null;
+  // If feature is disabled by admin OR no featured products are selected, do NOT render the section
+  if (enabled === false || !products || products.length === 0) {
+    return null;
+  }
 
   return (
     <section className="space-y-3.5 pt-2">
@@ -71,7 +70,7 @@ export function FeaturedProductsSection({
 
       {/* Horizontal Carousel */}
       <div className="flex gap-4 overflow-x-auto pb-4 pt-1 custom-scrollbar snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0">
-        {featured.map((prod) => {
+        {products.map((prod) => {
           const isCompared = comparedProducts.some((p) => p.id === prod.id);
           return (
             <div

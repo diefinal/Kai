@@ -130,7 +130,23 @@ export default function MusteriFiyatlariPage() {
       const definedColors = parseColorList(m.color);
       const activeColors = definedColors.length > 0 ? definedColors : ["Siyah"];
 
-      m.variants.forEach((v) => {
+      const variantsToProcess =
+        m.variants && m.variants.length > 0
+          ? m.variants
+          : [
+              {
+                id: `synthetic-${m.id}`,
+                phoneModelId: m.id,
+                ram: m.ram || "8 GB",
+                storage: m.storage || "256 GB",
+                price: Number(m.basePrice) > 0 ? Number(m.basePrice) : 10000,
+                customerPrice: null,
+                isActive: true,
+                colorPrices: [],
+              },
+            ];
+
+      variantsToProcess.forEach((v) => {
         // Stock count per color
         const inStockDevices = m.devices.filter(
           (d) =>
@@ -230,8 +246,10 @@ export default function MusteriFiyatlariPage() {
       const matchStock = !onlyInStock || r.stockCount > 0;
 
       const q = search.trim().toLowerCase();
+      const fullTitle = `${r.brand} ${r.modelName}`.toLowerCase();
       const matchSearch =
         !q ||
+        fullTitle.includes(q) ||
         r.brand.toLowerCase().includes(q) ||
         r.modelName.toLowerCase().includes(q) ||
         r.color.toLowerCase().includes(q) ||

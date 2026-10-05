@@ -10,19 +10,12 @@ export async function middleware(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const hostname = host.split(":")[0];
 
-  // 1. Ana Domain (teknoreha.com ve www.teknoreha.com) için Root Rewrite Mantığı
-  if (hostname === "teknoreha.com" || hostname === "www.teknoreha.com") {
-    if (pathname === "/") {
-      return NextResponse.rewrite(new URL("/musteri", request.url));
-    }
-  }
-
-  // 2. App Domain (app.teknoreha.com veya genel kök '/') -> Doğrudan /yonetim Paneline Yönlendirme
-  if (pathname === "/") {
+  // 1. App Domain (app.teknoreha.com) -> Köktesyse doğrudan /yonetim Paneline Yönlendirme
+  if (hostname === "app.teknoreha.com" && pathname === "/") {
     return NextResponse.redirect(new URL("/yonetim", request.url));
   }
 
-  // 3. Admin API Endpoint Koruması (/api/admin/*)
+  // 2. Admin API Endpoint Koruması (/api/admin/*)
   if (pathname.startsWith("/api/admin")) {
     const authHeader = request.headers.get("authorization");
     const cookieToken = request.cookies.get(APP_CONFIG.authCookieName)?.value;
@@ -48,7 +41,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 4. Yönetim Paneli Sayfa Koruması (/yonetim/*)
+  // 3. Yönetim Paneli Sayfa Koruması (/yonetim/*)
   if (pathname.startsWith("/yonetim")) {
     const cookieToken = request.cookies.get(APP_CONFIG.authCookieName)?.value;
 

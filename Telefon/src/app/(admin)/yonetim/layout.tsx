@@ -70,7 +70,7 @@ export default function YonetimLayout({
             className="flex items-center justify-center bg-white rounded-xl px-2.5 py-1.5 hover:bg-slate-50 transition shadow-sm w-full h-[60px]"
           >
             <Image
-              src="/teknoreha-logo.png"
+              src="/teknoreha-logo-v2.png"
               alt="TeknoReha"
               width={220}
               height={65}
@@ -152,7 +152,7 @@ export default function YonetimLayout({
                 className="flex items-center bg-white rounded-xl px-2.5 py-1.5 h-[50px] w-[170px]"
               >
                 <Image
-                  src="/teknoreha-logo.png"
+                  src="/teknoreha-logo-v2.png"
                   alt="TeknoReha"
                   width={170}
                   height={48}
@@ -214,7 +214,7 @@ export default function YonetimLayout({
             </button>
             <Link href="/yonetim" className="flex items-center h-10">
               <Image
-                src="/teknoreha-logo.png"
+                src="/teknoreha-logo-v2.png"
                 alt="TeknoReha"
                 width={150}
                 height={45}
