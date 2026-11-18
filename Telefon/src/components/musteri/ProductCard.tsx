@@ -6,6 +6,7 @@ import { MessageCircle, CheckCircle2, Clock3, Smartphone, Info, Scale, Check } f
 import { PublicProductDTO, ColorAvailabilityDTO } from "@/types";
 import { formatCurrency, createProductSlug } from "@/lib/utils";
 import { generateWhatsAppLink } from "@/lib/whatsapp";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import { ColorSwatch } from "./ColorSwatch";
 
 interface ProductCardProps {
@@ -77,21 +78,22 @@ export function ProductCard({
   // 2. Main PhoneModel imageUrl
   // 3. Placeholder Icon
   const displayImageUrl = useMemo(() => {
+    let rawUrl: string | null = null;
     if (activeColorObj && activeColorObj.imageUrl) {
-      return activeColorObj.imageUrl;
-    }
-
-    if (activeColor && product.colorImages && typeof product.colorImages === "object") {
+      rawUrl = activeColorObj.imageUrl;
+    } else if (activeColor && product.colorImages && typeof product.colorImages === "object") {
       const lower = activeColor.toLowerCase();
       const matchKey = Object.keys(product.colorImages).find(
         (k) => k.toLowerCase() === lower
       );
       if (matchKey && product.colorImages[matchKey]) {
-        return product.colorImages[matchKey];
+        rawUrl = product.colorImages[matchKey];
       }
+    } else {
+      rawUrl = product.imageUrl;
     }
 
-    return product.imageUrl;
+    return getOptimizedImageUrl(rawUrl);
   }, [activeColor, activeColorObj, product]);
 
   // Dynamic WhatsApp link generation
@@ -188,7 +190,10 @@ export function ProductCard({
             <ColorSwatch
               colorsWithStock={colorsWithStock}
               selectedColor={activeColor}
-              onSelectColor={(col) => setUserSelectedColor(col)}
+              onSelectColor={(col) => {
+                setUserSelectedColor(col);
+                setImgError(false);
+              }}
             />
             {activeColor && (
               <div className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">

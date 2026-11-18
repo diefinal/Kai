@@ -20,6 +20,7 @@ import { APP_CONFIG } from "@/lib/constants";
 import { getColorSwatchStyle } from "@/lib/colorUtils";
 import { ColorAvailabilityDTO, NormalizedPhoneSpecs, PublicProductDTO } from "@/types";
 import { ProductReservationModal } from "@/components/musteri/ProductReservationModal";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface ProductDetailData {
   id: string;
@@ -292,15 +293,20 @@ export function ProductDetailModal({
                   {product.imageUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={product.imageUrl}
+                      src={getOptimizedImageUrl(product.imageUrl) || product.imageUrl}
                       alt={`${product.brand} ${product.modelName} ${product.color}`}
                       className="max-h-[240px] sm:max-h-[270px] w-auto object-contain transition-all duration-300 transform hover:scale-105 drop-shadow-md"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        const fallback = parent?.querySelector(".detail-fallback");
+                        if (fallback) (fallback as HTMLElement).style.display = "flex";
+                      }}
                     />
-                  ) : (
-                    <div className="w-28 h-28 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400">
-                      <Smartphone className="w-12 h-12" />
-                    </div>
-                  )}
+                  ) : null}
+                  <div className="detail-fallback w-28 h-28 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400" style={{ display: product.imageUrl ? "none" : "flex" }}>
+                    <Smartphone className="w-12 h-12" />
+                  </div>
 
                   {/* Selected Color Caption */}
                   <div className="mt-4 text-center">

@@ -20,12 +20,13 @@ export function MusteriHeader() {
         {/* Logo */}
         <Link href="/musteri" className="flex items-center h-10 shrink-0">
           <Image
-            src="/teknoreha-logo-v2.png"
+            src="/teknoreha-logo-animated.gif"
             alt="TeknoReha"
             width={180}
             height={50}
             className="h-9 sm:h-10 w-auto object-contain"
             priority
+            unoptimized
           />
         </Link>
 

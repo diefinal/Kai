@@ -15,6 +15,7 @@ import {
   Check,
 } from "lucide-react";
 import { formatCurrency, parseColorList } from "@/lib/utils";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface ColorPriceItem {
   id?: string;
@@ -513,17 +514,19 @@ export default function MusteriFiyatlariPage() {
                     {/* Marka & Model */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-200">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-200 relative">
+                          <Smartphone className="w-5 h-5 text-slate-300 absolute" />
                           {row.imageUrl ? (
-                            // eslint-disable-next-next/no-img-element
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={row.imageUrl}
+                              src={getOptimizedImageUrl(row.imageUrl) || row.imageUrl}
                               alt={`${row.brand} ${row.modelName}`}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover relative z-10"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = "none";
+                              }}
                             />
-                          ) : (
-                            <Smartphone className="w-5 h-5 text-slate-400" />
-                          )}
+                          ) : null}
                         </div>
                         <div>
                           <span className="font-bold text-slate-900 block leading-tight">
