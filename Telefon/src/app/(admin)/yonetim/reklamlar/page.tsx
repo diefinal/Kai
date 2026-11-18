@@ -648,7 +648,7 @@ export default function ReklamlarPage() {
                   <div className="flex flex-col sm:flex-row items-stretch gap-3">
                     <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 hover:border-slate-400 bg-slate-50 py-3 px-4 rounded-xl text-xs font-semibold text-slate-700 transition">
                       <Upload className="w-4 h-4 text-slate-500" />
-                      <span>{uploadingImage ? "Görsel Yükleniyor..." : "Görsel Yükle (Supabase Storage)"}</span>
+                      <span>{uploadingImage ? "Görsel Yükleniyor..." : "Görsel Yükle"}</span>
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
