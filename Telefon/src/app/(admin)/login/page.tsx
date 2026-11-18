@@ -100,12 +100,13 @@ export default function LoginPage() {
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-200 p-8 sm:p-10">
         <div className="text-center mb-8 flex flex-col items-center">
           <Image
-            src="/teknoreha-logo-v2.png"
+            src="/teknoreha-logo-animated.gif"
             alt="TeknoReha"
             width={260}
             height={78}
             className="h-20 w-auto object-contain mb-3"
             priority
+            unoptimized
           />
           <p className="text-sm text-slate-500 font-medium">Yönetim Paneli Güvenli Girişi</p>
         </div>

@@ -3,6 +3,7 @@
 import { PublicAdDTO } from "@/types";
 import { Sparkles, MessageCircle, ArrowRight } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface AdInFeedBannerProps {
   ad: PublicAdDTO;
@@ -26,7 +27,7 @@ export function AdInFeedBanner({ ad, onSelectPhoneModel }: AdInFeedBannerProps) 
         <div className="w-full h-44 sm:h-56 rounded-2xl overflow-hidden relative flex items-center justify-center border border-white/10">
           {ad.imageUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
+            <img src={getOptimizedImageUrl(ad.imageUrl) || ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
           ) : (
             <span className="text-slate-300 text-sm">{ad.title}</span>
           )}
@@ -62,7 +63,7 @@ export function AdInFeedBanner({ ad, onSelectPhoneModel }: AdInFeedBannerProps) 
             {ad.imageUrl && (
               <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-slate-800 border border-white/10 flex-shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
+                <img src={getOptimizedImageUrl(ad.imageUrl) || ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
               </div>
             )}
 

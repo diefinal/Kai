@@ -16,13 +16,13 @@ const publicBaseUrl = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
 let cachedClient: S3Client | null = null;
 
 export function isStorageConfigured(): boolean {
-  return Boolean(accountId && accessKeyId && secretAccessKey && publicBaseUrl);
+  return Boolean(accountId && accessKeyId && secretAccessKey);
 }
 
 export function getStorageClient(): S3Client {
-  if (!accountId || !accessKeyId || !secretAccessKey || !publicBaseUrl) {
+  if (!accountId || !accessKeyId || !secretAccessKey) {
     throw new Error(
-      "Cloudflare R2 yapılandırması eksik. R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY ve R2_PUBLIC_URL değişkenlerini tanımlayın."
+      "Cloudflare R2 yapılandırması eksik. R2_ACCOUNT_ID, R2_ACCESS_KEY_ID ve R2_SECRET_ACCESS_KEY değişkenlerini tanımlayın."
     );
   }
 
@@ -63,10 +63,6 @@ async function uploadImage(
     throw new Error("Dosya boyutu 5 MB sınırını aşıyor.");
   }
 
-  if (!publicBaseUrl) {
-    throw new Error("Cloudflare R2 genel erişim adresi yapılandırılmamış.");
-  }
-
   const ext = getExtensionFromMime(mimeType);
   const path = `${prefix}/${crypto.randomUUID()}${ext}`;
 
@@ -86,8 +82,12 @@ async function uploadImage(
     throw new Error(`Görsel R2'ye yüklenemedi: ${message}`);
   }
 
+  // Türkiye'deki ISP bağlantı kesilme (ERR_CONNECTION_RESET) sorunlarını önlemek için
+  // istemciye doğrudan kendi güvenli /api/images proxy adresimizi dönüyoruz.
+  const publicUrl = `/api/images/${path}`;
+
   return {
-    publicUrl: `${publicBaseUrl}/${path}`,
+    publicUrl,
     path,
   };
 }
@@ -107,17 +107,39 @@ export async function uploadAdImage(
 }
 
 export async function deletePhoneImage(imageUrlOrPath?: string | null): Promise<boolean> {
-  if (!imageUrlOrPath || !isStorageConfigured() || !publicBaseUrl) {
+  if (!imageUrlOrPath || !isStorageConfigured()) {
     return false;
   }
 
   try {
-    let path = imageUrlOrPath;
+    let path = imageUrlOrPath.trim();
 
-    if (imageUrlOrPath.startsWith(`${publicBaseUrl}/`)) {
-      path = imageUrlOrPath.slice(publicBaseUrl.length + 1).split("?")[0];
-    } else if (imageUrlOrPath.startsWith("http://") || imageUrlOrPath.startsWith("https://")) {
-      // Eski Supabase veya başka bir harici bağlantıyı R2'den silmeye çalışma.
+    // 1. /api/images/phones/xxx.jpg veya /api/images/ads/xxx.jpg
+    if (path.includes("/api/images/")) {
+      const parts = path.split("/api/images/");
+      if (parts.length > 1) {
+        path = parts[1].split("?")[0];
+      }
+    }
+    // 2. Yapılandırılmış publicBaseUrl (örn: https://pub-xxx.r2.dev/phones/...)
+    else if (publicBaseUrl && path.startsWith(`${publicBaseUrl}/`)) {
+      path = path.slice(publicBaseUrl.length + 1).split("?")[0];
+    }
+    // 3. Genel r2.dev bağlantıları (örn: https://pub-da2e5f2539444d4197ca6c8ba4d62012.r2.dev/phones/...)
+    else if (path.includes(".r2.dev/")) {
+      const parts = path.split(".r2.dev/");
+      if (parts.length > 1) {
+        path = parts[1].split("?")[0];
+      }
+    }
+    // 4. Eski Supabase veya diğer harici linkleri R2'den silmeye çalışma
+    else if (path.startsWith("http://") || path.startsWith("https://")) {
+      return false;
+    }
+
+    // Temizlenen yol yalnızca "phones/..." veya "ads/..." şeklinde olmalıdır
+    if (!path.startsWith("phones/") && !path.startsWith("ads/")) {
+      console.warn("Geçersiz silme yolu, atlandı:", path);
       return false;
     }
 

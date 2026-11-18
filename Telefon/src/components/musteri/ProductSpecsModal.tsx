@@ -5,6 +5,7 @@ import { X, MessageCircle, CheckCircle2, Clock3, Smartphone, ExternalLink, Cpu, 
 import { PublicProductDTO } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { getProductSpecs } from "@/data/productSpecs";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface ProductSpecsModalProps {
   isOpen: boolean;
@@ -42,7 +43,7 @@ export function ProductSpecsModal({
   if (!isOpen || !product) return null;
 
   const specs = getProductSpecs(product.modelName, product.ram, product.storage, product.specs);
-  const displayImage = selectedColorImage || product.imageUrl;
+  const displayImage = getOptimizedImageUrl(selectedColorImage || product.imageUrl);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -102,17 +103,19 @@ export function ProductSpecsModal({
         <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
           {/* Product Overview Card */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-            <div className="w-28 h-28 sm:w-32 sm:h-32 bg-white dark:bg-slate-800 rounded-xl p-2 flex items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 bg-white dark:bg-slate-800 rounded-xl p-2 flex items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0 relative">
+              <Smartphone className="w-10 h-10 text-slate-400 absolute" />
               {displayImage ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={displayImage}
                   alt={`${product.brand} ${product.modelName}`}
-                  className="max-h-full max-w-full object-contain drop-shadow-sm"
+                  className="max-h-full max-w-full object-contain drop-shadow-sm relative z-10"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
                 />
-              ) : (
-                <Smartphone className="w-10 h-10 text-slate-400" />
-              )}
+              ) : null}
             </div>
 
             <div className="flex-1 text-center sm:text-left space-y-2">
