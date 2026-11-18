@@ -75,25 +75,31 @@ export function ProductCard({
 
   // Dynamic Image resolution with fallback hierarchy:
   // 1. Color-specific image (if assigned to activeColor)
-  // 2. Main PhoneModel imageUrl
+  // 2. Main PhoneModel imageUrl fallback
   // 3. Placeholder Icon
   const displayImageUrl = useMemo(() => {
-    let rawUrl: string | null = null;
+    // 1. Aktif rengin ColorAvailabilityDTO üzerindeki görseli
     if (activeColorObj && activeColorObj.imageUrl) {
-      rawUrl = activeColorObj.imageUrl;
-    } else if (activeColor && product.colorImages && typeof product.colorImages === "object") {
+      return getOptimizedImageUrl(activeColorObj.imageUrl);
+    }
+
+    // 2. product.colorImages haritasında aktif rengin görseli
+    if (activeColor && product.colorImages && typeof product.colorImages === "object") {
       const lower = activeColor.toLowerCase();
       const matchKey = Object.keys(product.colorImages).find(
         (k) => k.toLowerCase() === lower
       );
       if (matchKey && product.colorImages[matchKey]) {
-        rawUrl = product.colorImages[matchKey];
+        return getOptimizedImageUrl(product.colorImages[matchKey]);
       }
-    } else {
-      rawUrl = product.imageUrl;
     }
 
-    return getOptimizedImageUrl(rawUrl);
+    // 3. Seçili rengin özel görseli yoksa ana model görseline fallback yap
+    if (product.imageUrl) {
+      return getOptimizedImageUrl(product.imageUrl);
+    }
+
+    return null;
   }, [activeColor, activeColorObj, product]);
 
   // Dynamic WhatsApp link generation
