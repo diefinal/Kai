@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { PublicAdDTO } from "@/types";
 import { Sparkles, ChevronLeft, ChevronRight, MessageCircle, ArrowRight } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface AdHeroSliderProps {
   ads: PublicAdDTO[];
@@ -65,7 +66,7 @@ export function AdHeroSlider({ ads, onSelectPhoneModel }: AdHeroSliderProps) {
             {currentAd.imageUrl ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
-                src={currentAd.imageUrl}
+                src={getOptimizedImageUrl(currentAd.imageUrl) || currentAd.imageUrl}
                 alt={currentAd.title}
                 className="w-full h-full object-cover"
               />
@@ -135,7 +136,7 @@ export function AdHeroSlider({ ads, onSelectPhoneModel }: AdHeroSliderProps) {
               <div className="w-full lg:w-72 h-48 lg:h-56 rounded-2xl overflow-hidden bg-slate-800/80 border border-white/10 flex-shrink-0 shadow-lg">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={currentAd.imageUrl}
+                  src={getOptimizedImageUrl(currentAd.imageUrl) || currentAd.imageUrl}
                   alt={currentAd.title}
                   className="w-full h-full object-cover"
                 />

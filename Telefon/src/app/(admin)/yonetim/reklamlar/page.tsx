@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { AdminAdDTO, StockVariantOptionDTO } from "@/types";
 import { formatDate } from "@/lib/utils";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 export default function ReklamlarPage() {
   const [ads, setAds] = useState<AdminAdDTO[]>([]);
@@ -428,16 +429,18 @@ export default function ReklamlarPage() {
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-16 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center flex-shrink-0 relative">
+                            <ImageIcon className="w-5 h-5 text-slate-300 absolute" />
                             {ad.imageUrl ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img
-                                src={ad.imageUrl}
+                                src={getOptimizedImageUrl(ad.imageUrl) || ad.imageUrl}
                                 alt={ad.title}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover relative z-10"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = "none";
+                                }}
                               />
-                            ) : (
-                              <ImageIcon className="w-5 h-5 text-slate-400" />
-                            )}
+                            ) : null}
                           </div>
                           <div>
                             <span className="font-bold text-slate-900 block leading-tight">
@@ -648,7 +651,7 @@ export default function ReklamlarPage() {
                   <div className="flex flex-col sm:flex-row items-stretch gap-3">
                     <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 hover:border-slate-400 bg-slate-50 py-3 px-4 rounded-xl text-xs font-semibold text-slate-700 transition">
                       <Upload className="w-4 h-4 text-slate-500" />
-                      <span>{uploadingImage ? "Görsel Yükleniyor..." : "Görsel Yükle (Supabase Storage)"}</span>
+                      <span>{uploadingImage ? "Görsel Yükleniyor..." : "Görsel Yükle"}</span>
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
@@ -818,7 +821,7 @@ export default function ReklamlarPage() {
                       {imageUrl ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
-                          src={imageUrl}
+                          src={getOptimizedImageUrl(imageUrl) || imageUrl}
                           alt="Önizleme"
                           className="w-full h-full object-cover"
                         />
@@ -857,7 +860,7 @@ export default function ReklamlarPage() {
                         <div className="w-44 h-44 rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 flex-shrink-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={imageUrl}
+                            src={getOptimizedImageUrl(imageUrl) || imageUrl}
                             alt="Önizleme"
                             className="w-full h-full object-cover"
                           />

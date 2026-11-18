@@ -22,6 +22,7 @@ import { BrandCombobox } from "@/components/BrandCombobox";
 import { NormalizedPhoneSpecs } from "@/types";
 import { AdminSpecsPreviewModal, SpecsPreviewData } from "@/components/AdminSpecsPreviewModal";
 import { AdminManualSpecsModal } from "@/components/AdminManualSpecsModal";
+import { getOptimizedImageUrl, getImageStorageLabel } from "@/lib/imageUtils";
 
 interface PhoneModelVariantItem {
   id?: string;
@@ -681,24 +682,28 @@ export default function TelefonlarPage() {
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center flex-shrink-0 relative">
+                            <Smartphone className="w-5 h-5 text-slate-300 absolute" />
                             {m.imageUrl ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img
-                                src={m.imageUrl}
+                                src={getOptimizedImageUrl(m.imageUrl) || m.imageUrl}
                                 alt={`${m.brand} ${m.modelName}`}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover relative z-10"
                                 onError={(e) => {
                                   (e.target as HTMLImageElement).style.display = "none";
                                 }}
                               />
-                            ) : (
-                              <Smartphone className="w-5 h-5 text-slate-400" />
-                            )}
+                            ) : null}
                           </div>
                           <div>
                             <span className="font-semibold text-slate-900 block leading-tight">
                               {m.brand} {m.modelName}
                             </span>
+                            {m.imageUrl?.includes("supabase.co") && (
+                              <span className="inline-block mt-0.5 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded">
+                                Supabase Görseli (Yenileyin)
+                              </span>
+                            )}
                             {m.description && (
                               <span className="text-xs text-slate-400 line-clamp-1">
                                 {m.description}
@@ -1076,12 +1081,16 @@ export default function TelefonlarPage() {
 
                 {previewUrl ? (
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4">
-                    <div className="w-24 h-24 bg-white rounded-xl border border-slate-200 p-1 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
+                    <div className="w-24 h-24 bg-white rounded-xl border border-slate-200 p-1 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm relative">
+                      <Smartphone className="w-8 h-8 text-slate-300 absolute" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={previewUrl}
+                        src={getOptimizedImageUrl(previewUrl) || previewUrl}
                         alt="Önizleme"
-                        className="max-h-full max-w-full object-contain"
+                        className="max-h-full max-w-full object-contain relative z-10"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
                       />
                     </div>
 
@@ -1092,7 +1101,7 @@ export default function TelefonlarPage() {
                       <div className="text-[11px] text-slate-400">
                         {selectedFile
                           ? `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`
-                          : "Supabase Storage üzerinde kayıtlı"}
+                          : getImageStorageLabel(previewUrl)}
                       </div>
                       <div className="pt-2 flex items-center justify-center sm:justify-start gap-2">
                         <button
@@ -1162,9 +1171,12 @@ export default function TelefonlarPage() {
                                 <div className="flex items-center gap-2">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
-                                    src={colorUrl}
+                                    src={getOptimizedImageUrl(colorUrl) || colorUrl}
                                     alt={colorName}
                                     className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-200"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = "none";
+                                    }}
                                   />
                                   <button
                                     type="button"

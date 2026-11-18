@@ -6,6 +6,7 @@ import { MessageCircle, CheckCircle2, Clock3, Smartphone, Info, Scale, Check } f
 import { PublicProductDTO, ColorAvailabilityDTO } from "@/types";
 import { formatCurrency, createProductSlug } from "@/lib/utils";
 import { generateWhatsAppLink } from "@/lib/whatsapp";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import { ColorSwatch } from "./ColorSwatch";
 
 interface ProductCardProps {
@@ -74,24 +75,31 @@ export function ProductCard({
 
   // Dynamic Image resolution with fallback hierarchy:
   // 1. Color-specific image (if assigned to activeColor)
-  // 2. Main PhoneModel imageUrl
+  // 2. Main PhoneModel imageUrl fallback
   // 3. Placeholder Icon
   const displayImageUrl = useMemo(() => {
+    // 1. Aktif rengin ColorAvailabilityDTO üzerindeki görseli
     if (activeColorObj && activeColorObj.imageUrl) {
-      return activeColorObj.imageUrl;
+      return getOptimizedImageUrl(activeColorObj.imageUrl);
     }
 
+    // 2. product.colorImages haritasında aktif rengin görseli
     if (activeColor && product.colorImages && typeof product.colorImages === "object") {
       const lower = activeColor.toLowerCase();
       const matchKey = Object.keys(product.colorImages).find(
         (k) => k.toLowerCase() === lower
       );
       if (matchKey && product.colorImages[matchKey]) {
-        return product.colorImages[matchKey];
+        return getOptimizedImageUrl(product.colorImages[matchKey]);
       }
     }
 
-    return product.imageUrl;
+    // 3. Seçili rengin özel görseli yoksa ana model görseline fallback yap
+    if (product.imageUrl) {
+      return getOptimizedImageUrl(product.imageUrl);
+    }
+
+    return null;
   }, [activeColor, activeColorObj, product]);
 
   // Dynamic WhatsApp link generation
@@ -188,7 +196,10 @@ export function ProductCard({
             <ColorSwatch
               colorsWithStock={colorsWithStock}
               selectedColor={activeColor}
-              onSelectColor={(col) => setUserSelectedColor(col)}
+              onSelectColor={(col) => {
+                setUserSelectedColor(col);
+                setImgError(false);
+              }}
             />
             {activeColor && (
               <div className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">

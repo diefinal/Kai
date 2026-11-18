@@ -6,6 +6,7 @@ import { PublicProductDTO } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { getProductSpecs } from "@/data/productSpecs";
 import { generateWhatsAppLink } from "@/lib/whatsapp";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface ProductComparisonModalProps {
   isOpen: boolean;
@@ -92,17 +93,19 @@ export function ProductComparisonModal({
                 {comparedProducts.map((p) => (
                   <th key={p.id} className="py-3 px-4 text-center w-1/3">
                     <div className="flex flex-col items-center space-y-2">
-                      <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-xl p-2 flex items-center justify-center border border-slate-100 dark:border-slate-700">
+                      <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-xl p-2 flex items-center justify-center border border-slate-100 dark:border-slate-700 relative">
+                        <Smartphone className="w-8 h-8 text-slate-400 absolute" />
                         {p.imageUrl ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
-                            src={p.imageUrl}
+                            src={getOptimizedImageUrl(p.imageUrl) || p.imageUrl}
                             alt={p.modelName}
-                            className="max-h-full max-w-full object-contain drop-shadow-sm"
+                            className="max-h-full max-w-full object-contain drop-shadow-sm relative z-10"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = "none";
+                            }}
                           />
-                        ) : (
-                          <Smartphone className="w-8 h-8 text-slate-400" />
-                        )}
+                        ) : null}
                       </div>
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                         {p.brand}

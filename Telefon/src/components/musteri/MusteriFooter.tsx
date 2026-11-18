@@ -13,11 +13,12 @@ export function MusteriFooter() {
         {/* Logo */}
         <Link href="/musteri" className="mb-3">
           <Image
-            src="/teknoreha-logo-v2.png"
+            src="/teknoreha-logo-animated.gif"
             alt="TeknoReha"
             width={160}
             height={45}
             className="h-9 w-auto object-contain opacity-90 hover:opacity-100 transition"
+            unoptimized
           />
         </Link>
 

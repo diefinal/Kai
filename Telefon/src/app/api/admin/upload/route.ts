@@ -16,7 +16,7 @@ export async function POST(request: Request) {
         {
           success: false,
           error:
-            "Supabase Storage yapılandırması eksik. Lütfen .env dosyasında NEXT_PUBLIC_SUPABASE_URL ve SUPABASE_SECRET_KEY değişkenlerini tanımlayın.",
+            "Cloudflare R2 yapılandırması eksik. Lütfen R2 ortam değişkenlerini tanımlayın.",
         },
         { status: 503 }
       );
